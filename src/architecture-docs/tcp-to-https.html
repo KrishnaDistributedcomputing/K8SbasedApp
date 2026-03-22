@@ -49,81 +49,70 @@ code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83re
 <body>
 <div class="hero">
     <h1>🔌 TCP to HTTPS/REST Migration</h1>
-    <p class="tagline">Moving from raw TCP socket communication between services to HTTPS/REST APIs with proper contracts, observability, and security. Why it matters and how to do it without breaking everything.</p>
+    <p class="tagline">Moving from raw TCP socket communication between services to HTTPS/REST APIs with proper contracts, observability, and security.</p>
     <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/architecture.html">Architecture</a> <span>/</span> <span>TCP to HTTPS</span></div>
 </div>
 <div class="container">
 
 <!-- The Problem -->
 <div class="card">
-    <h2>The Problem with TCP Port-Based Communication</h2>
-    <p>In the current monolith, internal components communicate via raw TCP sockets on fixed ports. Service A opens a TCP connection to Service B on port 5432, sends a binary payload, and gets a binary response. This works — until it doesn't.</p>
-
+    <h2>Why TCP Port-Based Communication Is a Problem</h2>
     <div class="compare">
         <div class="compare-box" style="border-color:var(--red);">
-            <h4 style="color:var(--red);">TCP Sockets (Current)</h4>
+            <h4 style="color:var(--red);">TCP Sockets (Current State)</h4>
             <ul>
                 <li>Binary protocol — no human-readable debugging</li>
-                <li>Tight coupling: callers must know exact host:port</li>
+                <li>Tight coupling: callers must know exact <code>host:port</code></li>
                 <li>No built-in retries, timeouts, or circuit breaking</li>
-                <li>No authentication/authorization per request</li>
+                <li>No per-request authentication or authorization</li>
                 <li>No API versioning — any change breaks callers</li>
-                <li>No observability — can't trace requests through the system</li>
-                <li>Firewall rules are port-based: "allow port 5432" = full DB access</li>
+                <li>No distributed tracing or request-level metrics</li>
+                <li>Port-based firewall rules: "allow port 5432" = full DB access</li>
                 <li>No content negotiation or schema validation</li>
             </ul>
         </div>
         <div class="vs">vs</div>
         <div class="compare-box" style="border-color:var(--green);">
-            <h4 style="color:var(--green);">HTTPS/REST APIs (Target)</h4>
+            <h4 style="color:var(--green);">HTTPS/REST APIs (Target State)</h4>
             <ul>
                 <li>JSON/Protobuf — human-readable, tooling-friendly</li>
-                <li>Service discovery via DNS/Kubernetes Service</li>
-                <li>Built-in retries, timeouts, circuit breakers (Polly, Istio)</li>
-                <li>JWT/mTLS per-request authentication</li>
-                <li>URL-based versioning: /api/v1/, /api/v2/</li>
-                <li>OpenTelemetry tracing across all requests</li>
-                <li>Fine-grained authorization: "allow GET /patients but not DELETE"</li>
-                <li>OpenAPI schema validation and contract testing</li>
+                <li>Service discovery via DNS / Kubernetes Service</li>
+                <li>Polly + Istio provide retries, timeouts, circuit breakers</li>
+                <li>JWT + mTLS per-request authentication</li>
+                <li>URL-based versioning: <code>/api/v1/</code>, <code>/api/v2/</code></li>
+                <li>OpenTelemetry W3C Trace Context across all calls</li>
+                <li>Fine-grained: "allow GET /patients but not DELETE"</li>
+                <li>OpenAPI schema validation + contract testing</li>
             </ul>
         </div>
     </div>
-
-    <div class="highlight red"><b>Security risk:</b> TCP port-based communication in Kubernetes means any pod that can reach port 5432 has full database access. There's no query-level authorization. With HTTPS/REST + Istio mTLS, you control access at the API endpoint level: "pharmacy-service can call GET /api/v1/patients/{id}/allergies but not DELETE /api/v1/patients".</div>
+    <div class="highlight red"><b>Security risk:</b> TCP port-based communication in Kubernetes means any pod that can reach port 5432 has full database access. There is no query-level authorization. With HTTPS/REST + Istio mTLS, access is controlled at the API endpoint level — <code>pharmacy-service</code> can call <code>GET /api/v1/patients/{id}/allergies</code> but cannot call <code>DELETE /api/v1/patients</code>.</div>
 </div>
 
-<!-- What to Migrate -->
+<!-- Connection Inventory -->
 <div class="card">
-    <h2>What Needs to Migrate</h2>
-    <p>Inventory every TCP connection in the current system. Each one becomes an HTTPS/REST API endpoint:</p>
+    <h2>Connection Inventory &amp; Migration Scope</h2>
+    <p>Not everything moves to REST. Database, broker, and cache connections use purpose-built protocols that outperform HTTP for their use case. The migration targets <b>service-to-service business logic calls</b>.</p>
     <table>
-        <tr><th>Current TCP Connection</th><th>Port</th><th>Protocol</th><th>Target REST API</th><th>Priority</th></tr>
-        <tr><td>EHR App → PostgreSQL (direct)</td><td>5432</td><td>Binary (libpq)</td><td>Not migrated — DB connections stay TCP but go through connection pooler (PgBouncer)</td><td>—</td></tr>
-        <tr><td>Frontend → Backend (API calls)</td><td>5000</td><td>HTTP (no TLS)</td><td><code>HTTPS /api/v{n}/...</code> via APIM</td><td><span class="phase-badge p1">Phase 1</span></td></tr>
-        <tr><td>Service → Service (internal)</td><td>Various</td><td>Raw TCP / gRPC</td><td><code>HTTPS /api/v{n}/...</code> via Istio mTLS</td><td><span class="phase-badge p2">Phase 2</span></td></tr>
-        <tr><td>Service → Kafka</td><td>9092</td><td>Kafka binary</td><td>Keep as-is — Kafka protocol is purpose-built. Add SASL/TLS.</td><td><span class="phase-badge p3">Phase 3</span></td></tr>
-        <tr><td>Service → Redis</td><td>6379</td><td>RESP protocol</td><td>Keep as-is — Redis protocol is purpose-built. Add TLS + AUTH.</td><td><span class="phase-badge p3">Phase 3</span></td></tr>
+        <tr><th>Connection</th><th>Port</th><th>Protocol</th><th>Target</th><th>Action</th></tr>
+        <tr><td>Frontend → Backend</td><td>5000</td><td>HTTP (no TLS)</td><td><code>HTTPS /api/v{n}/</code> via APIM + Ingress</td><td><span class="phase-badge p1">Migrate</span></td></tr>
+        <tr><td>Service → Service</td><td>Various</td><td>Raw TCP / gRPC</td><td><code>HTTPS /api/v{n}/</code> via Istio mTLS</td><td><span class="phase-badge p1">Migrate</span></td></tr>
+        <tr><td>App → PostgreSQL</td><td>5432</td><td>libpq binary</td><td>Keep TCP + add <code>sslmode=verify-full</code> + PgBouncer pool</td><td><span class="phase-badge p2">Encrypt</span></td></tr>
+        <tr><td>Service → Kafka</td><td>9092</td><td>Kafka binary</td><td>Keep TCP + add <code>SASL_SSL</code> listener</td><td><span class="phase-badge p2">Encrypt</span></td></tr>
+        <tr><td>Service → Redis</td><td>6379</td><td>RESP</td><td>Keep TCP + add TLS (<code>port 6380</code>) + AUTH</td><td><span class="phase-badge p2">Encrypt</span></td></tr>
     </table>
-    <div class="highlight green"><b>Key insight:</b> Not everything should move to REST. Database connections, message brokers, and caches use purpose-built protocols that are more efficient than HTTP. The migration is about <b>service-to-service business logic calls</b> — not infrastructure connections. For infra, just add TLS encryption.</div>
 </div>
 
-<!-- Migration Approach -->
+<!-- TLS Termination at Ingress -->
 <div class="card">
-    <h2>How to Approach the Migration</h2>
-
-    <h3>Phase 1: External-Facing Endpoints (Week 1-2)</h3>
-    <p>Start with what users see. Move all frontend-to-backend communication through HTTPS with TLS termination at the ingress.</p>
+    <h2>TLS Termination at Ingress</h2>
+    <p>All external traffic enters through NGINX Ingress with TLS termination. cert-manager automates certificate lifecycle via Let's Encrypt.</p>
     <div class="event-flow">
         <span class="box red">Browser HTTP:5000</span><span class="arr">→</span>
-        <span class="box orange">Add NGINX Ingress + TLS</span><span class="arr">→</span>
-        <span class="box green">Browser HTTPS:443 → NGINX → Service</span>
+        <span class="box teal">NGINX Ingress (TLS termination)</span><span class="arr">→</span>
+        <span class="box green">HTTPS:443 → Service:8080</span>
     </div>
-    <div class="code">
-# Current: Browser → http://ehr-api:5000/api/patients
-# Target:  Browser → https://api.ehr.example.com/api/v1/patients
-
-# Step 1: Create TLS certificate (cert-manager + Let's Encrypt)
-apiVersion: cert-manager.io/v1
+    <div class="code">apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ehr-api-tls
@@ -135,8 +124,7 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - api.ehr.example.com
-
-# Step 2: Update Ingress to terminate TLS
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -158,30 +146,32 @@ spec:
               service:
                 name: ehr-api
                 port:
-                  number: 8080
-    </div>
+                  number: 8080</div>
+</div>
 
-    <h3>Phase 2: Service-to-Service via Istio mTLS (Week 3-6)</h3>
-    <p>Install Istio service mesh. Every pod gets an Envoy sidecar that automatically encrypts all pod-to-pod traffic with mutual TLS. No code changes needed.</p>
+<!-- Istio mTLS -->
+<div class="card">
+    <h2>Service-to-Service mTLS via Istio</h2>
+    <p>Istio injects an Envoy sidecar proxy into every pod. All pod-to-pod traffic is automatically encrypted with mutual TLS — zero application code changes required. Combined with <code>AuthorizationPolicy</code>, each service's API surface is locked down to specific callers and HTTP methods.</p>
     <div class="event-flow">
-        <span class="box red">Pod A TCP:8080 → Pod B</span><span class="arr">→</span>
-        <span class="box orange">Install Istio sidecars</span><span class="arr">→</span>
-        <span class="box green">Pod A → Envoy (mTLS) → Envoy → Pod B</span>
+        <span class="box red">Pod A → Pod B (plaintext TCP)</span><span class="arr">→</span>
+        <span class="box green">Pod A → Envoy sidecar (mTLS) → Envoy sidecar → Pod B</span>
     </div>
-    <div class="code">
-# Enable strict mTLS for the entire ehr namespace
-apiVersion: security.istio.io/v1
+    <div class="grid-2">
+        <div>
+            <h3>PeerAuthentication — Enforce mTLS</h3>
+            <div class="code">apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
   name: default
   namespace: ehr-core
 spec:
   mtls:
-    mode: STRICT    # Reject any non-mTLS traffic
-
----
-# Authorization policy: pharmacy-service can only call specific patient endpoints
-apiVersion: security.istio.io/v1
+    mode: STRICT  # Reject any non-mTLS traffic</div>
+        </div>
+        <div>
+            <h3>AuthorizationPolicy — Fine-Grained Access</h3>
+            <div class="code">apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   name: patient-service-access
@@ -193,107 +183,240 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/ehr-clinical/sa/pharmacy-service"]
+            principals:
+              - "cluster.local/ns/ehr-clinical/sa/pharmacy-service"
       to:
         - operation:
             methods: ["GET"]
             paths: ["/api/v1/patients/*/allergies"]
     - from:
         - source:
-            principals: ["cluster.local/ns/ehr-clinical/sa/clinical-service"]
+            principals:
+              - "cluster.local/ns/ehr-clinical/sa/clinical-service"
       to:
         - operation:
             methods: ["GET", "POST"]
-            paths: ["/api/v1/patients/*"]
+            paths: ["/api/v1/patients/*"]</div>
+        </div>
     </div>
+    <div class="highlight"><b>How Istio identity works:</b> Each pod gets a SPIFFE identity certificate (<code>spiffe://cluster.local/ns/{namespace}/sa/{service-account}</code>) provisioned automatically by <code>istiod</code>. The <code>AuthorizationPolicy</code> matches on these identities — not IP addresses — so policies survive pod restarts and scaling.</div>
+</div>
 
-    <h3>Phase 3: Encrypt Infrastructure Connections (Week 7-8)</h3>
-    <p>Database, Kafka, and Redis connections stay on their native protocols but add TLS encryption:</p>
+<!-- Infrastructure TLS -->
+<div class="card">
+    <h2>Infrastructure Connection Encryption</h2>
+    <p>Database, Kafka and Redis connections stay on their native wire protocols. The goal is adding TLS encryption and authentication — not replacing the protocol.</p>
     <div class="grid-2">
-        <div class="highlight green">
-            <b>PostgreSQL:</b> Already using <code>sslmode=require</code> with Azure PostgreSQL. Connection string includes SSL certificate validation. No change needed.
+        <div>
+            <h3>PostgreSQL — TLS + Verify CA</h3>
+            <div class="code"># Connection string with full TLS verification
+Host=ehrdb-canadacentral.postgres.database.azure.com;
+Port=5432;
+Database=ehrdb;
+Username=ehradmin;
+Password=***;
+SSL Mode=VerifyFull;
+Trust Server Certificate=false;
+Root Certificate=/etc/ssl/certs/DigiCertGlobalRootCA.crt.pem;
+
+# PgBouncer pooling (connection multiplexing)
+# 6 pods × 20 connections = 120 backend connections
+# PgBouncer consolidates to ~30 PostgreSQL connections
+Pool Mode=Transaction;
+Max Pool Size=20;
+Min Pool Size=5;</div>
         </div>
-        <div class="highlight blue">
-            <b>Kafka:</b> Enable SASL_SSL listener. Configure producers/consumers with <code>security.protocol=SASL_SSL</code> and <code>sasl.mechanism=PLAIN</code>. Use Azure Event Hubs connection string.
+        <div>
+            <h3>Kafka — SASL_SSL</h3>
+            <div class="code"># Producer/consumer configuration
+security.protocol=SASL_SSL
+sasl.mechanism=PLAIN
+sasl.jaas.config=\
+  org.apache.kafka.common.security.plain.PlainLoginModule \
+  required \
+  username="$ConnectionString" \
+  password="Endpoint=sb://ehr-eventhubs.servicebus.
+    windows.net/;SharedAccessKeyName=send;
+    SharedAccessKey=***";
+
+# SSL settings
+ssl.endpoint.identification.algorithm=https
+ssl.truststore.location=/etc/ssl/certs/cacerts
+ssl.truststore.type=JKS</div>
+            <h3>Redis — TLS on Port 6380</h3>
+            <div class="code"># Azure Cache for Redis (TLS enforced)
+Host=ehr-redis.redis.cache.windows.net;
+Port=6380;
+Password=***;
+Ssl=True;
+AbortConnect=False;
+ConnectTimeout=5000;
+SyncTimeout=3000;</div>
         </div>
     </div>
+</div>
 
-    <h3>Phase 4: Remove Legacy TCP Ports (Week 9-10)</h3>
-    <p>After all traffic flows through HTTPS/mTLS, close the old TCP ports in Kubernetes NetworkPolicy:</p>
-    <div class="code">
-# Deny all TCP traffic except HTTPS (443/8080) and infrastructure ports
-apiVersion: networking.k8s.io/v1
+<!-- NetworkPolicy Lockdown -->
+<div class="card">
+    <h2>NetworkPolicy — Close Legacy Ports</h2>
+    <p>After all traffic flows through HTTPS/mTLS, lock down the namespace with a <code>NetworkPolicy</code> that only permits encrypted ports. Any pod trying to use a legacy plaintext port is denied at the kernel level (Calico/Cilium).</p>
+    <div class="code">apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-legacy-tcp
+  name: ehr-core-strict
   namespace: ehr-core
 spec:
-  podSelector: {}    # Apply to all pods in namespace
+  podSelector: {}          # Apply to all pods
   policyTypes: [Ingress, Egress]
   ingress:
     - ports:
-        - port: 8080     # HTTPS service port
+        - port: 8080       # HTTPS service port
           protocol: TCP
-        - port: 15090    # Istio metrics
+        - port: 15090      # Istio Prometheus metrics
+          protocol: TCP
+        - port: 15021      # Istio health probe
           protocol: TCP
   egress:
     - ports:
-        - port: 443      # External HTTPS
+        - port: 443        # External HTTPS (Azure services, APIM)
           protocol: TCP
-        - port: 5432     # PostgreSQL (TLS-encrypted)
+        - port: 5432       # PostgreSQL (TLS required by Azure)
           protocol: TCP
-        - port: 9093     # Kafka SASL_SSL
+        - port: 9093       # Kafka SASL_SSL
           protocol: TCP
-        - port: 6380     # Redis TLS
+        - port: 6380       # Redis TLS
           protocol: TCP
-        - port: 53       # DNS
+        - port: 53         # DNS resolution
           protocol: UDP
-    </div>
+        - port: 53
+          protocol: TCP
+        - port: 15012      # istiod xDS (control plane)
+          protocol: TCP</div>
+    <div class="highlight orange"><b>Port audit:</b> Before applying, run <code>kubectl exec -it &lt;pod&gt; -- ss -tlnp</code> on every pod to inventory active listeners. Any port not in the NetworkPolicy whitelist will be blocked. Verify with <code>kubectl logs -l app=calico-node -n calico-system</code> for denied connections after rollout.</div>
 </div>
 
-<!-- Contract-first API Design -->
+<!-- Contract-First API Design -->
 <div class="card">
     <h2>Contract-First API Design</h2>
-    <p>When replacing TCP calls with REST APIs, design the API contract <b>before</b> writing code. This prevents the "just expose whatever the database has" anti-pattern.</p>
-
-    <h3>Approach: OpenAPI-First</h3>
+    <p>Replacing TCP calls with REST APIs requires designing the API contract before writing code — preventing the "expose whatever the database has" anti-pattern.</p>
     <table>
         <tr><th>Step</th><th>Action</th><th>Tool</th><th>Output</th></tr>
-        <tr><td>1</td><td>Write OpenAPI spec for each service</td><td>Swagger Editor / Stoplight</td><td><code>patient-service.openapi.yaml</code></td></tr>
-        <tr><td>2</td><td>Generate server stubs from spec</td><td>NSwag / openapi-generator</td><td>ASP.NET Core controllers with contracts</td></tr>
-        <tr><td>3</td><td>Generate client SDKs from spec</td><td>NSwag / Kiota</td><td>Typed HTTP clients for callers</td></tr>
-        <tr><td>4</td><td>Contract testing in CI</td><td>Pact / Spectral</td><td>Fail build if API breaks contract</td></tr>
-        <tr><td>5</td><td>Version APIs from day one</td><td>Asp.Versioning.Mvc</td><td><code>/api/v1/</code>, <code>/api/v2/</code></td></tr>
+        <tr><td>1</td><td>Write OpenAPI 3.1 spec per service</td><td>Swagger Editor / Stoplight Studio</td><td><code>patient-service.openapi.yaml</code></td></tr>
+        <tr><td>2</td><td>Generate server stubs from spec</td><td>NSwag / openapi-generator</td><td>ASP.NET Core controllers with strongly-typed contracts</td></tr>
+        <tr><td>3</td><td>Generate typed HTTP clients</td><td>NSwag / Microsoft Kiota</td><td><code>PatientServiceClient.cs</code> — typed SDK for callers</td></tr>
+        <tr><td>4</td><td>Contract testing in CI pipeline</td><td>Pact / Spectral</td><td>Build fails if API breaks existing contract</td></tr>
+        <tr><td>5</td><td>API versioning from day one</td><td>Asp.Versioning.Mvc 8.1</td><td><code>/api/v1/</code>, <code>/api/v2/</code>, <code>/api/v3/</code></td></tr>
     </table>
+    <h3>Typed HTTP Client with Resilience (Polly)</h3>
+    <div class="code">// Program.cs — register typed HTTP client with retry + circuit breaker
+builder.Services.AddHttpClient&lt;PatientServiceClient&gt;(client =>
+{
+    client.BaseAddress = new Uri("https://patient-service.ehr-core.svc.cluster.local:8080");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.AddPolicyHandler(HttpPolicyExtensions
+    .HandleTransientHttpError()
+    .WaitAndRetryAsync(3, attempt => TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt))))
+.AddPolicyHandler(HttpPolicyExtensions
+    .HandleTransientHttpError()
+    .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)));
 
-    <div class="highlight"><b>Why contract-first matters:</b> With TCP sockets, the "contract" is whatever binary format the developer chose. Changing it requires coordinated deploys. With OpenAPI contracts, consumers and producers develop independently — the spec is the agreement. Breaking changes go in a new version.</div>
+// PatientServiceClient.cs — typed client
+public class PatientServiceClient
+{
+    private readonly HttpClient _http;
+    public PatientServiceClient(HttpClient http) => _http = http;
+
+    public async Task&lt;PatientDto?&gt; GetPatientAsync(int id)
+        => await _http.GetFromJsonAsync&lt;PatientDto&gt;($"/api/v1/patients/{id}");
+
+    public async Task&lt;List&lt;AllergyDto&gt;&gt; GetAllergiesAsync(int patientId)
+        => await _http.GetFromJsonAsync&lt;List&lt;AllergyDto&gt;&gt;(
+            $"/api/v1/patients/{patientId}/allergies") ?? [];
+}</div>
 </div>
 
-<!-- Observability Gains -->
+<!-- Observability -->
 <div class="card">
-    <h2>What You Gain: Observability</h2>
-    <p>HTTP/HTTPS traffic is inherently more observable than raw TCP. After migration you get:</p>
+    <h2>Observability Gains</h2>
+    <p>HTTP/HTTPS traffic is inherently more observable than raw TCP. Moving to REST unlocks four capabilities that are impossible with binary socket communication:</p>
     <div class="grid-2">
         <div>
             <h3>Distributed Tracing</h3>
-            <p>Every HTTPS request carries a <code>traceparent</code> header (W3C Trace Context). Istio sidecars propagate it automatically. You can trace a single patient lookup from browser → APIM → patient-service → database and see exactly where latency lives.</p>
+            <p>Every HTTPS request carries a <code>traceparent</code> header (W3C Trace Context). Istio sidecars propagate it automatically. A single patient lookup can be traced: browser → APIM → patient-service → PostgreSQL — with per-span latency breakdown.</p>
+            <div class="code"># Example trace header (auto-injected by Istio)
+traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+# Format: version-traceId-parentSpanId-traceFlags</div>
         </div>
         <div>
             <h3>Request-Level Metrics</h3>
-            <p>Istio exports Prometheus metrics for every HTTP request: latency (p50/p95/p99), status codes (2xx/4xx/5xx), request volume. TCP sockets give you... bytes in and bytes out.</p>
+            <p>Istio exports Prometheus metrics for every HTTP request automatically. No application instrumentation needed.</p>
+            <div class="code"># Istio-generated Prometheus metrics
+istio_requests_total{
+  source_workload="clinical-service",
+  destination_workload="patient-service",
+  response_code="200",
+  request_protocol="http"
+} 45832
+
+istio_request_duration_milliseconds_bucket{
+  destination_workload="patient-service",
+  le="50"
+} 42100   # 92% of requests under 50ms</div>
         </div>
         <div>
-            <h3>Access Logging</h3>
-            <p>Every HTTPS request is logged with: timestamp, source service, destination service, method, path, status code, latency, user identity (from JWT). TCP logs show: "connection opened, connection closed."</p>
+            <h3>Structured Access Logging</h3>
+            <p>Every request is logged with: timestamp, source, destination, method, path, status, latency, and user identity from JWT claims. TCP logs only show "connection opened / closed."</p>
+            <div class="code">{
+  "timestamp": "2026-03-22T18:30:00Z",
+  "source": "clinical-service",
+  "destination": "patient-service",
+  "method": "GET",
+  "path": "/api/v1/patients/42/allergies",
+  "status": 200,
+  "latency_ms": 12,
+  "user": "dr.smith@ehr.example.com",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+}</div>
         </div>
         <div>
-            <h3>Traffic Shifting</h3>
-            <p>With HTTP-aware routing (Istio VirtualService), you can send 10% of traffic to a new version for canary testing. TCP only knows ports — it's all-or-nothing.</p>
+            <h3>Traffic Shifting &amp; Canary</h3>
+            <p>HTTP-aware routing (Istio VirtualService) enables canary deployments — send 10% of traffic to a new version while 90% stays on the current version. TCP only knows ports: it's all-or-nothing.</p>
+            <div class="code">apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: patient-canary
+spec:
+  hosts: [patient-service]
+  http:
+    - route:
+        - destination:
+            host: patient-service
+            subset: v1
+          weight: 90
+        - destination:
+            host: patient-service
+            subset: v2
+          weight: 10</div>
         </div>
     </div>
 </div>
 
+<!-- Protocol Decision Matrix -->
+<div class="card">
+    <h2>Protocol Decision Matrix</h2>
+    <p>When to use REST, gRPC, or event-driven messaging between services:</p>
+    <table>
+        <tr><th>Pattern</th><th>Protocol</th><th>Use When</th><th>EHR Examples</th><th>Latency</th></tr>
+        <tr><td><b>Synchronous query</b></td><td>REST/JSON over HTTPS</td><td>Client needs an immediate response; human is waiting</td><td>GET patient demographics, GET allergy list</td><td>10-50ms</td></tr>
+        <tr><td><b>Synchronous command</b></td><td>REST/JSON over HTTPS</td><td>Write operation that must confirm success before proceeding</td><td>POST prescription (needs drug interaction check response)</td><td>50-200ms</td></tr>
+        <tr><td><b>High-throughput RPC</b></td><td>gRPC over HTTP/2 + mTLS</td><td>Internal service-to-service with high call volume; needs streaming</td><td>Vitals streaming from IoT devices, bulk lab result sync</td><td>2-10ms</td></tr>
+        <tr><td><b>Fire-and-forget event</b></td><td>Kafka/Event Hubs</td><td>Producer doesn't need a reply; multiple consumers; replay needed</td><td>PatientRegistered, LabResultReady, VitalsRecorded</td><td>50-500ms</td></tr>
+        <tr><td><b>Cross-service data sync</b></td><td>CDC (Debezium) → Kafka</td><td>Keep read models in sync without explicit publish calls</td><td>Patient projections in clinical-db, scheduling-db</td><td>1-5s</td></tr>
+    </table>
 </div>
-<div class="footer"><a href="/">Home</a> · <a href="/architecture.html">Architecture</a> · <a href="/rto-rpo.html">RTO/RPO Requirements</a> · <a href="/strangler-pattern.html">Strangler Pattern</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/architecture.html">Architecture</a> · <a href="/rto-rpo.html">RTO/RPO</a> · <a href="/strangler-pattern.html">Strangler Pattern</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
 </body>
 </html>
