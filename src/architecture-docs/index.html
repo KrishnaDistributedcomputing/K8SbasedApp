@@ -108,6 +108,9 @@ tr:hover td{background:rgba(56,189,248,.03);}
   .main{padding:1rem;}
   .nav{padding:0 .5rem;}
 }
+/* Mermaid diagrams */
+.mermaid-wrap{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+.mermaid-wrap pre.mermaid{margin:0;text-align:center;}
 </style>
 </head>
 <body>
@@ -120,6 +123,13 @@ tr:hover td{background:rgba(56,189,248,.03);}
         <span>☸️ Kubernetes: <b>v1.33</b></span>
         <span>🔧 Runtime: <b>.NET 8 / ASP.NET Core</b></span>
         <span>📅 Version: <b>March 2026</b></span>
+    </div>
+    <div class="meta" style="margin-top:.5rem;">
+        <span>🏥 <a href="https://ehr-portal-canadacentral.azurewebsites.net/" target="_blank" style="color:#38bdf8;font-weight:600;">EHR Portal</a></span>
+        <span>🏗️ <a href="https://ehr-architecture-canadacentral.azurewebsites.net/" target="_blank" style="color:#38bdf8;font-weight:600;">Architecture Docs</a></span>
+        <span>💰 <a href="https://ehr-costing-canadacentral.azurewebsites.net/" target="_blank" style="color:#38bdf8;font-weight:600;">Costing Dashboard</a></span>
+        <span>⚙️ <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" style="color:#38bdf8;font-weight:600;">API Swagger</a></span>
+        <span>🐙 <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" style="color:#38bdf8;font-weight:600;">GitHub Repo</a></span>
     </div>
 </div>
 
@@ -189,40 +199,45 @@ tr:hover td{background:rgba(56,189,248,.03);}
 
     <div class="card">
         <h2>🏛️ High-Level Target Architecture</h2>
-        <div class="diagram">
-                              ┌──────────────────────────────────────────────┐
-                              │         <span class="hl">External Consumers</span>                     │
-                              │   Portal · Mobile App · Partner APIs        │
-                              └─────────────────┬────────────────────────────┘
-                                                │ HTTPS
-                              ┌─────────────────▼────────────────────────────┐
-                              │       <span class="hl3">Azure API Management (APIM)</span>              │
-                              │   Rate Limiting · OAuth · Versioning         │
-                              │   Analytics · Request/Response Transform     │
-                              └──────────┬───────────────┬───────────────────┘
-                                         │ Ingress       │ Egress
-                              ┌──────────▼───────────────▼───────────────────┐
-                              │      <span class="hl4">AKS Cluster (Istio Service Mesh)</span>         │
-                              │                                              │
-                              │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-                              │  │<span class="hl2">Patient  </span>│ │<span class="hl2">Clinical </span>│ │<span class="hl2">Scheduling</span>│     │
-                              │  │<span class="hl2">Service  </span>│ │<span class="hl2">Service  </span>│ │<span class="hl2">Service  </span>│     │
-                              │  └────┬─────┘ └────┬─────┘ └────┬─────┘     │
-                              │       │            │            │            │
-                              │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-                              │  │<span class="hl2">Pharmacy </span>│ │<span class="hl2">  Lab    </span>│ │<span class="hl2">Provider </span>│     │
-                              │  │<span class="hl2">Service  </span>│ │<span class="hl2">Service  </span>│ │<span class="hl2">Service  </span>│     │
-                              │  └────┬─────┘ └────┬─────┘ └────┬─────┘     │
-                              │       │            │            │            │
-                              │  ┌────▼────────────▼────────────▼─────┐      │
-                              │  │   <span class="hl3">Event Bus (Azure Event Hubs)</span>      │      │
-                              │  └────┬────────────┬────────────┬─────┘      │
-                              │       │            │            │            │
-                              │  ┌────▼─────┐ ┌────▼─────┐ ┌───▼──────┐    │
-                              │  │<span class="hl">Streaming</span> │ │<span class="hl">Notificat</span>│ │ <span class="hl">Audit   </span>│    │
-                              │  │<span class="hl">Flush Svc</span> │ │<span class="hl">ion Svc  </span>│ │ <span class="hl">Service </span>│    │
-                              │  └──────────┘ └──────────┘ └──────────┘    │
-                              └──────────────────────────────────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    EXT(["🌐 External Consumers\nPortal · Mobile App · Partner APIs"]):::ext
+    APIM["🔀 Azure API Management\nRate Limiting · OAuth · Versioning\nAnalytics · Request Transform"]:::apim
+    subgraph AKS["☸️ AKS Cluster — Istio Service Mesh"]
+        PS["👤 Patient\nService"]:::svc
+        CS["📋 Clinical\nService"]:::svc
+        SS["📅 Scheduling\nService"]:::svc
+        PH["💊 Pharmacy\nService"]:::svc
+        LS["🔬 Lab\nService"]:::svc
+        PR["🩺 Provider\nService"]:::svc
+        EB{{"📡 Event Bus · Azure Event Hubs"}}:::bus
+        SF["⚡ Streaming\nFlush Svc"]:::plat
+        NS["🔔 Notification\nService"]:::plat
+        AS["📝 Audit\nService"]:::plat
+    end
+    EXT -->|HTTPS| APIM
+    APIM -->|Ingress| PS
+    APIM -->|Ingress| CS
+    APIM -->|Ingress| SS
+    APIM --> PH
+    APIM --> LS
+    APIM --> PR
+    PS --> EB
+    CS --> EB
+    SS --> EB
+    PH --> EB
+    LS --> EB
+    PR --> EB
+    EB --> SF
+    EB --> NS
+    EB --> AS
+    classDef ext fill:#164e63,stroke:#2dd4bf,color:#e2e8f0,stroke-width:2px
+    classDef apim fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef svc fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef bus fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef plat fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    style AKS fill:#1e293b,stroke:#475569,color:#e2e8f0
+        </pre></div>
     </div>
 
     <div class="card">
@@ -577,23 +592,18 @@ tr:hover td{background:rgba(56,189,248,.03);}
 
     <div class="card">
         <h2>🏛️ Clean Architecture per Service</h2>
-        <div class="diagram">    ┌─────────────────────────────────────────────────┐
-    │                  <span class="hl">API Layer</span>                       │
-    │   Controllers / Minimal APIs / gRPC Endpoints   │
-    │   Request validation, DTO mapping, versioning   │
-    ├─────────────────────────────────────────────────┤
-    │               <span class="hl2">Application Layer</span>                  │
-    │   CQRS: Commands (MediatR) + Queries (Dapper)   │
-    │   Application services, validators, mappers     │
-    ├─────────────────────────────────────────────────┤
-    │                <span class="hl4">Domain Layer</span>                      │
-    │   Aggregates, Entities, Value Objects            │
-    │   Domain Events, Domain Services, Repo ports    │
-    ├─────────────────────────────────────────────────┤
-    │             <span class="hl3">Infrastructure Layer</span>                 │
-    │   EF Core (write) · Dapper (read)               │
-    │   Kafka Producer/Consumer · External APIs        │
-    └─────────────────────────────────────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    A["🔌 API Layer\nControllers · Minimal APIs · gRPC\nRequest validation · DTO mapping · Versioning"]:::api
+    B["⚙️ Application Layer\nCQRS: Commands via MediatR + Queries via Dapper\nApplication services · Validators · Mappers"]:::app
+    C["🏛️ Domain Layer\nAggregates · Entities · Value Objects\nDomain Events · Domain Services · Repo Ports"]:::dom
+    D["🔧 Infrastructure Layer\nEF Core write · Dapper read\nKafka Producer/Consumer · External APIs"]:::infra
+    A --> B --> C --> D
+    classDef api fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef app fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef dom fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef infra fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+        </pre></div>
     </div>
 
     <div class="card">
@@ -634,22 +644,39 @@ tr:hover td{background:rgba(56,189,248,.03);}
 <div id="sec-streaming" class="section">
     <div class="card">
         <h2>📡 Event Streaming Architecture</h2>
-        <div class="diagram">                Producers                          Consumers
-          ┌──────────────────┐              ┌──────────────────┐
-          │ <span class="hl2">patient-service</span> │──┐       ┌──►│ <span class="hl3">streaming-flush</span>  │
-          └──────────────────┘  │       │   └──────────────────┘
-          ┌──────────────────┐  │       │   ┌──────────────────┐
-          │<span class="hl2">clinical-service</span> │──┤       ├──►│ <span class="hl3">notification-svc</span> │
-          └──────────────────┘  │       │   └──────────────────┘
-          ┌──────────────────┐  │ <span class="hl">Kafka</span> │   ┌──────────────────┐
-          │<span class="hl2">scheduling-svc</span>   │──┼──────►├──►│ <span class="hl3">audit-service</span>   │
-          └──────────────────┘  │<span class="hl">Topics</span> │   └──────────────────┘
-          ┌──────────────────┐  │       │   ┌──────────────────┐
-          │ <span class="hl2">pharmacy-service</span>│──┤       ├──►│ <span class="hl3">lab-service</span>     │
-          └──────────────────┘  │       │   └──────────────────┘
-          ┌──────────────────┐  │       │   ┌──────────────────┐
-          │  <span class="hl2">lab-service</span>    │──┘       └──►│ <span class="hl3">clinical-service</span>│
-          └──────────────────┘              └──────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    subgraph Producers["📤 Producers"]
+        PS["👤 patient-service"]:::prod
+        CS["📋 clinical-service"]:::prod
+        SS["📅 scheduling-svc"]:::prod
+        PH["💊 pharmacy-service"]:::prod
+        LS["🔬 lab-service"]:::prod
+    end
+    K{{"📡 Kafka Topics\n8 topics · 12 partitions"}}:::bus
+    subgraph Consumers["📥 Consumers"]
+        SF["⚡ streaming-flush"]:::cons
+        NS["🔔 notification-svc"]:::cons
+        AS["📝 audit-service"]:::cons
+        LS2["🔬 lab-service"]:::cons
+        CS2["📋 clinical-service"]:::cons
+    end
+    PS --> K
+    CS --> K
+    SS --> K
+    PH --> K
+    LS --> K
+    K --> SF
+    K --> NS
+    K --> AS
+    K --> LS2
+    K --> CS2
+    classDef prod fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef bus fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef cons fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    style Producers fill:#1e293b,stroke:#34d399,color:#e2e8f0
+    style Consumers fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+        </pre></div>
     </div>
 
     <div class="card">
@@ -721,26 +748,29 @@ tr:hover td{background:rgba(56,189,248,.03);}
 
     <div class="card">
         <h2>📤 CQRS Read/Write Separation</h2>
-        <div class="diagram">       <span class="hl">Commands (Write)</span>                    <span class="hl2">Queries (Read)</span>
-            │                                    │
-            ▼                                    ▼
-  ┌──────────────────┐              ┌──────────────────┐
-  │   Command API    │              │   Query API      │
-  │   (POST/PUT/DEL) │              │   (GET)          │
-  └────────┬─────────┘              └────────┬─────────┘
-           │                                 │
-           ▼                                 ▼
-  ┌──────────────────┐              ┌──────────────────┐
-  │  Command Handler │              │  Query Handler   │
-  │  (<span class="hl4">MediatR</span>)       │              │  (<span class="hl4">Dapper</span>)        │
-  └────────┬─────────┘              └────────┬─────────┘
-           │                                 │
-           ▼                                 ▼
-  ┌──────────────────┐   <span class="hl3">Kafka CDC</span>  ┌──────────────────┐
-  │  <span class="hl">Write DB</span>        │────────────►│  <span class="hl2">Read Store</span>      │
-  │  (PostgreSQL)    │             │  (Redis/Cosmos)  │
-  │  Normalized      │             │  Denormalized    │
-  └──────────────────┘             └──────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    subgraph Write["✏️ Commands — Write Path"]
+        WA["Command API\nPOST / PUT / DELETE"]:::write
+        WH["Command Handler\nMediatR"]:::handler
+        WD[("🗄️ Write DB\nPostgreSQL\nNormalized")]:::writedb
+    end
+    subgraph Read["📖 Queries — Read Path"]
+        RA["Query API\nGET"]:::read
+        RH["Query Handler\nDapper"]:::handler
+        RD[("⚡ Read Store\nRedis / Cosmos\nDenormalized")]:::readdb
+    end
+    WA --> WH --> WD
+    RA --> RH --> RD
+    WD -->|"Kafka CDC"| RD
+    classDef write fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef read fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef handler fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef writedb fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef readdb fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    style Write fill:#0f172a,stroke:#38bdf8,color:#e2e8f0
+    style Read fill:#0f172a,stroke:#34d399,color:#e2e8f0
+        </pre></div>
     </div>
 
     <div class="card">
@@ -766,34 +796,29 @@ tr:hover td{background:rgba(56,189,248,.03);}
 <div id="sec-apim" class="section">
     <div class="card">
         <h2>🔀 API Management — Ingress &amp; Egress</h2>
-        <div class="diagram">┌──────────────────────────────────────────────────────────────────────┐
-│                    <span class="hl3">Azure API Management</span>                                 │
-│                                                                      │
-│  <span class="hl">INGRESS POLICIES</span>            │         <span class="hl2">EGRESS POLICIES</span>               │
-│  ─────────────────            │         ──────────────────             │
-│  • JWT Validation             │         • Response Caching            │
-│  • Rate Limiting              │         • Response Transformation     │
-│  • IP Filtering               │         • CORS Headers                │
-│  • Request Validation         │         • Content Negotiation         │
-│  • Quota Enforcement          │         • Error Masking               │
-│  • OAuth 2.0 Scopes           │         • FHIR Compliance Headers     │
-│  • Throttling                 │         • Compression (gzip)          │
-│  • Correlation ID Inject      │         • ETag Generation             │
-│                               │                                      │
-└────────────┬──────────────────┴──────────────────┬───────────────────┘
-      Inbound│                                     │Outbound
-             ▼                                     ▲
-┌──────────────────────────────────────────────────────────────────────┐
-│                    <span class="hl4">AKS Internal Gateway (Istio)</span>                       │
-│                                                                      │
-│   /api/v1/patients/*     ──►  <span class="hl2">patient-service:8081</span>                     │
-│   /api/v1/encounters/*   ──►  <span class="hl2">clinical-service:8082</span>                    │
-│   /api/v1/appointments/* ──►  <span class="hl2">scheduling-service:8083</span>                  │
-│   /api/v1/prescriptions/*──►  <span class="hl2">pharmacy-service:8084</span>                    │
-│   /api/v1/labs/*         ──►  <span class="hl2">lab-service:8085</span>                         │
-│   /api/v1/providers/*    ──►  <span class="hl2">provider-service:8086</span>                    │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    subgraph APIM["🔀 Azure API Management"]
+        direction LR
+        ING["📥 INGRESS POLICIES\nJWT Validation · Rate Limiting\nIP Filtering · OAuth 2.0 Scopes\nQuota Enforcement · Throttling\nCorrelation ID Inject"]:::ing
+        EGR["📤 EGRESS POLICIES\nResponse Caching · CORS Headers\nContent Negotiation · Error Masking\nFHIR Compliance · gzip\nETag Generation"]:::egr
+    end
+    subgraph GW["☸️ AKS Internal Gateway — Istio"]
+        R1["👤 /api/v1/patients → patient-service:8081"]:::route
+        R2["📋 /api/v1/encounters → clinical-service:8082"]:::route
+        R3["📅 /api/v1/appointments → scheduling:8083"]:::route
+        R4["💊 /api/v1/prescriptions → pharmacy:8084"]:::route
+        R5["🔬 /api/v1/labs → lab-service:8085"]:::route
+        R6["🩺 /api/v1/providers → provider-service:8086"]:::route
+    end
+    ING -->|Inbound| GW
+    GW -->|Outbound| EGR
+    classDef ing fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef egr fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef route fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    style APIM fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style GW fill:#1e293b,stroke:#a78bfa,color:#e2e8f0
+        </pre></div>
     </div>
 
     <div class="card">
@@ -890,30 +915,29 @@ tr:hover td{background:rgba(56,189,248,.03);}
 <div id="sec-infra" class="section">
     <div class="card">
         <h2>🏗️ Azure Resource Topology</h2>
-        <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
-│                        <span class="hl">Azure Subscription</span>                                     │
-│                  (e62428e7-08dd-4bc2-82e2-2c51586d9105)                      │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐     │
-│  │               <span class="hl2">Resource Group: rg-aks-store-demo</span>                     │     │
-│  │                                                                     │     │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────┐ │     │
-│  │  │  <span class="hl4">AKS</span>        │  │  <span class="hl3">APIM</span>       │  │  <span class="hl">Azure Event Hubs</span>          │ │     │
-│  │  │  Cluster     │  │  Gateway    │  │  (Kafka-compatible)        │ │     │
-│  │  │  3 nodes     │  │  Standard   │  │  Standard tier             │ │     │
-│  │  │  DS2_v2      │  │  tier       │  │  12 partitions/topic       │ │     │
-│  │  └─────────────┘  └─────────────┘  └─────────────────────────────┘ │     │
-│  │                                                                     │     │
-│  │  ┌───────────────────────────────┐  ┌────────────────────────────┐ │     │
-│  │  │  <span class="hl2">PostgreSQL Flexible</span>         │  │  <span class="hl3">Container Registry</span>       │ │     │
-│  │  │  Servers (per service)       │  │  (ehracrcanada)            │ │     │
-│  │  │  • ehrdb (B2s) ← current    │  │  Premium tier              │ │     │
-│  │  │  • patient-db (target)       │  │  Geo-replication           │ │     │
-│  │  │  • clinical-db (target)      │  │                            │ │     │
-│  │  │  • scheduling-db (target)    │  │                            │ │     │
-│  │  └───────────────────────────────┘  └────────────────────────────┘ │     │
-│  └─────────────────────────────────────────────────────────────────────┘     │
-└─────────────────────────────────────────────────────────────────────────────┘</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    subgraph SUB["☁️ Azure Subscription<br/>e62428e7-08dd-..."]
+        subgraph RG["📦 Resource Group: rg-aks-store-demo"]
+            AKS["☸️ AKS Cluster<br/>3 nodes · DS2_v2<br/>K8s 1.33"]:::aks
+            APIM["🔀 APIM Gateway<br/>Standard tier"]:::apim
+            EH["📡 Azure Event Hubs<br/>Kafka-compatible<br/>12 partitions/topic"]:::bus
+            PG[("🐘 PostgreSQL Flexible<br/>ehrdb B2s · patient-db<br/>clinical-db · scheduling-db")]:::db
+            ACR["🐳 Container Registry<br/>ehracrcanada<br/>Premium · Geo-replication"]:::acr
+        end
+    end
+    AKS --- APIM
+    AKS --- EH
+    AKS --- PG
+    AKS --- ACR
+    classDef aks fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef apim fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef bus fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef db fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef acr fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    style SUB fill:#0f172a,stroke:#475569,color:#e2e8f0
+    style RG fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+        </pre></div>
         <div class="badge-row">
             <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/overview" target="_blank" class="azure-tag rg"><span class="badge">RG</span> Resource Group</a>
             <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/overview" target="_blank" class="azure-tag aks"><span class="badge">AKS</span> Cluster</a>
@@ -961,33 +985,33 @@ tr:hover td{background:rgba(56,189,248,.03);}
 <div id="sec-security" class="section">
     <div class="card">
         <h2>🔒 Zero-Trust Security Architecture</h2>
-        <div class="diagram">                   Internet
-                      │
-                ┌─────▼──────┐
-                │ <span class="hl3">Azure WAF</span>  │  DDoS protection, OWASP rules
-                └─────┬──────┘
-                      │
-                ┌─────▼──────┐
-                │   <span class="hl">APIM</span>     │  JWT validation, rate limiting
-                └─────┬──────┘
-                      │ Private Link
-                ┌─────▼──────┐
-                │ <span class="hl4">Istio</span>      │  mTLS between all pods
-                │ Gateway    │
-                └─────┬──────┘
-                      │ mTLS
-            ┌─────────┼─────────┐
-            ▼         ▼         ▼
-       ┌────────┐ ┌────────┐ ┌────────┐
-       │<span class="hl2">Service</span> │ │<span class="hl2">Service</span> │ │<span class="hl2">Service</span> │  AuthZ via OPA policies
-       │   A    │ │   B    │ │   C    │
-       └───┬────┘ └───┬────┘ └───┬────┘
-           │          │          │ Private Endpoints
-       ┌───▼──────────▼──────────▼───┐
-       │  <span class="hl3">Azure Private DNS Zone</span>     │
-       │  *.postgres.database.azure  │
-       │  *.redis.cache.windows.net  │
-       └─────────────────────────────┘</div>
+        <p style="color:var(--muted);margin-bottom:1rem;">Every request is authenticated, authorized, and encrypted — regardless of network location. No implicit trust based on IP, VNet, or service identity alone.</p>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    INT(["🌐 Internet"]):::ext
+    WAF["🛡️ Azure WAF<br/>DDoS · OWASP rules"]:::waf
+    APIM["🔀 APIM<br/>JWT · Rate Limiting"]:::apim
+    ISTIO["🔒 Istio Gateway<br/>mTLS between all pods"]:::istio
+    SA["Service A"]:::svc
+    SB["Service B"]:::svc
+    SC["Service C"]:::svc
+    DNS[("🔏 Azure Private DNS<br/>*.postgres.database.azure<br/>*.redis.cache.windows.net")]:::dns
+    INT -->|HTTPS| WAF
+    WAF --> APIM
+    APIM -->|Private Link| ISTIO
+    ISTIO -->|mTLS| SA
+    ISTIO -->|mTLS| SB
+    ISTIO -->|mTLS| SC
+    SA -->|Private Endpoint| DNS
+    SB -->|Private Endpoint| DNS
+    SC -->|Private Endpoint| DNS
+    classDef ext fill:#164e63,stroke:#2dd4bf,color:#e2e8f0,stroke-width:2px
+    classDef waf fill:#7f1d1d,stroke:#f87171,color:#e2e8f0,stroke-width:2px
+    classDef apim fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef istio fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef svc fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef dns fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+        </pre></div>
     </div>
 
     <div class="card">
@@ -1006,6 +1030,200 @@ tr:hover td{background:rgba(56,189,248,.03);}
             <tr><td><b>Network isolation</b></td><td>NSG + K8s Network Policies + Istio Authorization Policies</td>
                 <td><a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/networking" target="_blank" class="azure-tag aks"><span class="badge">AKS</span> Networking</a></td>
             </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🔑 Identity &amp; Access Management (IAM)</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    subgraph ENTRA["🔐 Azure Entra ID"]
+        direction TB
+        subgraph AR["📋 App Registrations"]
+            A1["ehr-api-app<br/>client_id"]:::app
+            A2["ehr-portal-spa<br/>public client"]:::app
+            A3["ehr-partner-daemon<br/>client secret"]:::app
+        end
+        subgraph EA["🏢 Enterprise Apps"]
+            E1["APIM Service<br/>Principal"]:::ent
+            E2["AKS Managed<br/>Identity"]:::ent
+            E3["ACR Pull<br/>Identity"]:::ent
+        end
+        subgraph ROLES["👥 App Roles"]
+            R1["EHR.Admin"]:::role
+            R2["EHR.Clinician"]:::role
+            R3["EHR.Nurse"]:::role
+            R4["EHR.LabTech"]:::role
+            R5["EHR.Emergency"]:::role
+        end
+        subgraph SCOPES["🔑 OAuth 2.0 Scopes"]
+            S1["patient.read/write"]:::scope
+            S2["encounter.read"]:::scope
+            S3["prescription.write"]:::scope
+            S4["lab.read/write"]:::scope
+            S5["admin.full"]:::scope
+        end
+    end
+    ROLES --> SCOPES
+    classDef app fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef ent fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef role fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef scope fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    style ENTRA fill:#0f172a,stroke:#f472b6,color:#e2e8f0
+    style AR fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+    style EA fill:#1e293b,stroke:#a78bfa,color:#e2e8f0
+    style ROLES fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style SCOPES fill:#1e293b,stroke:#34d399,color:#e2e8f0
+        </pre></div>
+        <table>
+            <tr><th>Role</th><th>Allowed Scopes</th><th>API Endpoints</th><th>Data Access</th></tr>
+            <tr><td><b>EHR.Admin</b></td><td>admin.full</td><td>All endpoints</td><td>Full CRUD + audit logs</td></tr>
+            <tr><td><b>EHR.Clinician</b></td><td>patient.*, encounter.*, prescription.write, lab.read</td><td>Patients, Encounters, Prescriptions, Labs</td><td>Own patients only (row-level)</td></tr>
+            <tr><td><b>EHR.Nurse</b></td><td>patient.read, encounter.read, vitals.write</td><td>Patients (read), Vitals (write)</td><td>Assigned ward/department</td></tr>
+            <tr><td><b>EHR.LabTech</b></td><td>lab.read, lab.write</td><td>Lab orders &amp; results</td><td>Lab department only</td></tr>
+            <tr><td><b>EHR.ReadOnly</b></td><td>*.read</td><td>GET endpoints only</td><td>No PHI fields (masked)</td></tr>
+            <tr><td><b>EHR.Emergency</b></td><td>patient.*, encounter.*</td><td>Patient + Encounter (break-glass)</td><td>All patients — audit-logged</td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🔐 Secret Management &amp; Key Vault Integration</h2>
+        <div class="grid-2">
+            <div>
+                <h3>Azure Key Vault Secrets</h3>
+                <table>
+                    <tr><th>Secret</th><th>Consumer</th><th>Rotation</th></tr>
+                    <tr><td><code>pg-connection-string</code></td><td>All DB-backed services</td><td>90 days (auto)</td></tr>
+                    <tr><td><code>kafka-sasl-password</code></td><td>Event producers/consumers</td><td>180 days</td></tr>
+                    <tr><td><code>redis-access-key</code></td><td>BFF, notification service</td><td>90 days (auto)</td></tr>
+                    <tr><td><code>sendgrid-api-key</code></td><td>Notification service</td><td>365 days</td></tr>
+                    <tr><td><code>acr-pull-token</code></td><td>AKS kubelet</td><td>Managed Identity</td></tr>
+                </table>
+            </div>
+            <div>
+                <h3>CSI Secret Store Driver</h3>
+                <div class="code"><span class="comment"># SecretProviderClass — mounts Key Vault secrets as volumes</span>
+<span class="keyword">apiVersion:</span> secrets-store.csi.x-k8s.io/v1
+<span class="keyword">kind:</span> SecretProviderClass
+<span class="keyword">metadata:</span>
+  <span class="keyword">name:</span> <span class="string">ehr-kv-secrets</span>
+  <span class="keyword">namespace:</span> <span class="string">ehr-core</span>
+<span class="keyword">spec:</span>
+  <span class="keyword">provider:</span> <span class="string">azure</span>
+  <span class="keyword">parameters:</span>
+    <span class="keyword">usePodIdentity:</span> <span class="string">"true"</span>
+    <span class="keyword">keyvaultName:</span> <span class="string">kv-ehr-canadacentral</span>
+    <span class="keyword">objects:</span> |
+      <span class="keyword">array:</span>
+        - |
+          <span class="keyword">objectName:</span> pg-connection-string
+          <span class="keyword">objectType:</span> secret
+        - |
+          <span class="keyword">objectName:</span> kafka-sasl-password
+          <span class="keyword">objectType:</span> secret</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🛡️ Kubernetes Network Policies</h2>
+        <p style="color:var(--muted);margin-bottom:.75rem;">Default-deny ingress &amp; egress per namespace. Each service explicitly declares allowed traffic flows.</p>
+        <div class="grid-2">
+            <div>
+                <div class="code"><span class="comment"># Default Deny All — applied to every EHR namespace</span>
+<span class="keyword">apiVersion:</span> networking.k8s.io/v1
+<span class="keyword">kind:</span> NetworkPolicy
+<span class="keyword">metadata:</span>
+  <span class="keyword">name:</span> <span class="string">default-deny-all</span>
+  <span class="keyword">namespace:</span> <span class="string">ehr-core</span>
+<span class="keyword">spec:</span>
+  <span class="keyword">podSelector:</span> {}
+  <span class="keyword">policyTypes:</span>
+    - Ingress
+    - Egress</div>
+            </div>
+            <div>
+                <div class="code"><span class="comment"># Allow patient-service ← APIM ingress only</span>
+<span class="keyword">apiVersion:</span> networking.k8s.io/v1
+<span class="keyword">kind:</span> NetworkPolicy
+<span class="keyword">metadata:</span>
+  <span class="keyword">name:</span> <span class="string">allow-patient-ingress</span>
+  <span class="keyword">namespace:</span> <span class="string">ehr-core</span>
+<span class="keyword">spec:</span>
+  <span class="keyword">podSelector:</span>
+    <span class="keyword">matchLabels:</span>
+      <span class="keyword">app:</span> <span class="string">patient-service</span>
+  <span class="keyword">ingress:</span>
+    - <span class="keyword">from:</span>
+        - <span class="keyword">namespaceSelector:</span>
+            <span class="keyword">matchLabels:</span>
+              <span class="keyword">name:</span> <span class="string">istio-system</span></div>
+            </div>
+        </div>
+        <table style="margin-top:1rem;">
+            <tr><th>Source → Destination</th><th>Port</th><th>Protocol</th><th>Policy</th></tr>
+            <tr><td>Istio Gateway → patient-service</td><td>8081</td><td>TCP/mTLS</td><td><span class="badge green">Allow</span></td></tr>
+            <tr><td>Istio Gateway → clinical-service</td><td>8082</td><td>TCP/mTLS</td><td><span class="badge green">Allow</span></td></tr>
+            <tr><td>patient-service → PostgreSQL</td><td>5432</td><td>TCP/TLS</td><td><span class="badge green">Allow</span></td></tr>
+            <tr><td>All services → Event Hubs</td><td>9093</td><td>TCP/SASL-SSL</td><td><span class="badge green">Allow</span></td></tr>
+            <tr><td>patient-service → lab-service</td><td>—</td><td>—</td><td><span class="badge red">Deny</span></td></tr>
+            <tr><td>Any pod → Internet</td><td>*</td><td>*</td><td><span class="badge red">Deny</span></td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Container &amp; Image Security</h2>
+        <div class="grid-2">
+            <div class="context-box" style="border-color:var(--accent);">
+                <h4>🐳 Image Scanning Pipeline</h4>
+                <div class="flow">
+                    <div class="flow-box accent">Code Push</div>
+                    <span class="flow-arr">→</span>
+                    <div class="flow-box purple">Trivy Scan</div>
+                    <span class="flow-arr">→</span>
+                    <div class="flow-box green">ACR Push</div>
+                    <span class="flow-arr">→</span>
+                    <div class="flow-box orange">Defender Scan</div>
+                </div>
+                <ul style="color:var(--muted);font-size:.85rem;list-style:none;margin-top:.5rem;">
+                    <li>✅ Base images: <code>mcr.microsoft.com/dotnet/aspnet:8.0-alpine</code></li>
+                    <li>✅ Non-root container user (UID 1000)</li>
+                    <li>✅ Read-only root filesystem</li>
+                    <li>✅ No privileged containers</li>
+                    <li>✅ Distroless / Alpine base only</li>
+                </ul>
+            </div>
+            <div class="context-box" style="border-color:var(--green);">
+                <h4>🛡️ Pod Security Standards</h4>
+                <div class="code" style="margin:0;"><span class="comment"># Pod Security Admission — restricted profile</span>
+<span class="keyword">apiVersion:</span> v1
+<span class="keyword">kind:</span> Namespace
+<span class="keyword">metadata:</span>
+  <span class="keyword">name:</span> <span class="string">ehr-core</span>
+  <span class="keyword">labels:</span>
+    <span class="keyword">pod-security.kubernetes.io/enforce:</span> <span class="string">restricted</span>
+    <span class="keyword">pod-security.kubernetes.io/warn:</span> <span class="string">restricted</span>
+    <span class="keyword">pod-security.kubernetes.io/audit:</span> <span class="string">restricted</span></div>
+                <ul style="color:var(--muted);font-size:.85rem;list-style:none;margin-top:.5rem;">
+                    <li>✅ No <code>hostNetwork</code>, <code>hostPID</code>, <code>hostIPC</code></li>
+                    <li>✅ <code>runAsNonRoot: true</code></li>
+                    <li>✅ <code>allowPrivilegeEscalation: false</code></li>
+                    <li>✅ Drop ALL capabilities</li>
+                    <li>✅ Seccomp profile: RuntimeDefault</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔏 Data Protection &amp; Privacy</h2>
+        <table>
+            <tr><th>Data Classification</th><th>Examples</th><th>Encryption</th><th>Access Control</th><th>Retention</th></tr>
+            <tr><td><span class="badge red">PHI — Critical</span></td><td>SSN, Diagnoses, Lab Results, Prescriptions</td><td>AES-256 + Column-level encryption</td><td>Clinician role + patient consent</td><td>7 years (HIPAA)</td></tr>
+            <tr><td><span class="badge orange">PHI — Standard</span></td><td>Patient name, DOB, Address, Insurance</td><td>AES-256 (TDE)</td><td>Care team RBAC</td><td>7 years (HIPAA)</td></tr>
+            <tr><td><span class="badge blue">PII — Internal</span></td><td>Provider credentials, Employee records</td><td>AES-256 (TDE)</td><td>Admin role</td><td>Employment + 3 years</td></tr>
+            <tr><td><span class="badge green">Operational</span></td><td>Appointments, Audit logs, Metrics</td><td>AES-256 (TDE)</td><td>Role-based</td><td>1-3 years</td></tr>
+            <tr><td><span class="badge purple">Public</span></td><td>Facility hours, Department names</td><td>TLS in transit</td><td>Open</td><td>Indefinite</td></tr>
         </table>
     </div>
 </div>
@@ -1087,25 +1305,42 @@ tr:hover td{background:rgba(56,189,248,.03);}
 
     <div class="card">
         <h2>🗄️ Database Migration Strategy</h2>
-        <div class="diagram"><span class="hl">Current:</span>  1 PostgreSQL (<span class="hl2">ehrdb</span>) ─── All 8 tables
-                │
-<span class="hl3">Phase 1:</span>  ├── <span class="hl2">patient-db</span> ─── patients, allergies, vitals
-          └── <span class="hl2">ehrdb</span> (remaining) ─── appointments, records, prescriptions, labs, providers
-                │
-<span class="hl3">Phase 2:</span>  ├── <span class="hl2">patient-db</span>
-          ├── <span class="hl2">clinical-db</span> ─── medical_records
-          ├── <span class="hl2">pharmacy-db</span> ─── prescriptions
-          ├── <span class="hl2">lab-db</span> ─── lab_results
-          └── <span class="hl2">ehrdb</span> (shrinking) ─── appointments, providers
-                │
-<span class="hl4">Phase 3:</span>  ├── <span class="hl2">patient-db</span>
-          ├── <span class="hl2">clinical-db</span>
-          ├── <span class="hl2">scheduling-db</span> ─── appointments
-          ├── <span class="hl2">pharmacy-db</span>
-          ├── <span class="hl2">lab-db</span>
-          └── <span class="hl2">provider-db</span> ─── providers
-
-Each phase uses <span class="hl">dual-write + CDC</span> to maintain consistency during migration.</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    subgraph Current["🗄️ Current State"]
+        DB0[("ehrdb<br/>All 8 tables")]:::current
+    end
+    subgraph P1["Phase 1 — Foundation"]
+        DB1A[("patient-db<br/>patients, allergies, vitals")]:::new
+        DB1B[("ehrdb remaining<br/>appointments, records,<br/>prescriptions, labs, providers")]:::old
+    end
+    subgraph P2["Phase 2 — Clinical"]
+        DB2A[("patient-db")]:::new
+        DB2B[("clinical-db<br/>medical_records")]:::new
+        DB2C[("pharmacy-db<br/>prescriptions")]:::new
+        DB2D[("lab-db<br/>lab_results")]:::new
+        DB2E[("ehrdb shrinking<br/>appointments, providers")]:::old
+    end
+    subgraph P3["Phase 3 — Full Platform"]
+        DB3A[("patient-db")]:::done
+        DB3B[("clinical-db")]:::done
+        DB3C[("scheduling-db<br/>appointments")]:::done
+        DB3D[("pharmacy-db")]:::done
+        DB3E[("lab-db")]:::done
+        DB3F[("provider-db<br/>providers")]:::done
+    end
+    Current -->|"dual-write + CDC"| P1
+    P1 -->|"dual-write + CDC"| P2
+    P2 -->|"dual-write + CDC"| P3
+    classDef current fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef new fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef old fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef done fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    style Current fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+    style P1 fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style P2 fill:#1e293b,stroke:#34d399,color:#e2e8f0
+    style P3 fill:#1e293b,stroke:#a78bfa,color:#e2e8f0
+        </pre></div>
         <div style="margin-top:.5rem;">
             <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/overview" target="_blank" class="azure-tag db"><span class="badge">PG</span> Current Database</a>
         </div>
@@ -1162,20 +1397,20 @@ Each phase uses <span class="hl">dual-write + CDC</span> to maintain consistency
     <!-- Upgrade Phases Diagram -->
     <div class="card">
         <h2>🔄 Upgrade Execution Phases</h2>
-        <div class="diagram">
-<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span>
-  <span class="hl4">WEEK -8 to -6</span>          <span class="hl4">WEEK -5 to -3</span>          <span class="hl4">WEEK -2 to -1</span>          <span class="hl2">DEPLOY DAY</span>          <span class="hl4">+1 to +2 WEEKS</span>
-  <span class="hl">DISCOVERY</span>               <span class="hl">PREPARATION</span>              <span class="hl">VALIDATION</span>              <span class="hl2">PRODUCTION</span>           <span class="hl">POST-UPGRADE</span>
-<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span>
-                                                                               │
-  • Review K8s changelog    • Update Helm charts       • Upgrade staging AKS    │  <span class="hl2">• Upgrade prod</span>        • Monitor SLOs 72h
-  • Check API deprecations  • Update Dockerfiles       • Run full test suite    │  <span class="hl2">  control plane</span>      • Check error rates
-  • Audit add-on versions   • Pin add-on versions      • Load test (50% prod)   │  <span class="hl2">• Surge node pool</span>    • Verify autoscaling
-  • Review CVEs fixed       • Update PDBs if needed    • Validate monitoring    │  <span class="hl2">• Drain old nodes</span>    • Update runbooks
-  • Capacity planning       • Update network policies  • DR rehearsal           │  <span class="hl2">• Smoke tests</span>        • Delete old node pool
-  • Stakeholder sign-off    • Prepare rollback plan    • Change Advisory Board  │  <span class="hl2">• Health checks</span>      • Close change ticket
-                                                                               │
-<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span></div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    D["🔍 DISCOVERY<br/>Week -8 to -6<br/>───────────<br/>Review changelog<br/>Check API deprecations<br/>Audit add-on versions<br/>Review CVEs<br/>Capacity planning<br/>Stakeholder sign-off"]:::disc
+    P["🛠️ PREPARATION<br/>Week -5 to -3<br/>───────────<br/>Update Helm charts<br/>Update Dockerfiles<br/>Pin add-on versions<br/>Update PDBs<br/>Network policies<br/>Rollback plan"]:::prep
+    V["✅ VALIDATION<br/>Week -2 to -1<br/>───────────<br/>Upgrade staging AKS<br/>Full test suite<br/>Load test 50% prod<br/>Validate monitoring<br/>DR rehearsal<br/>Change Advisory Board"]:::val
+    PROD["🚀 PRODUCTION<br/>Deploy Day<br/>───────────<br/>Upgrade control plane<br/>Surge node pool<br/>Drain old nodes<br/>Smoke tests<br/>Health checks"]:::prod
+    POST["📊 POST-UPGRADE<br/>+1 to +2 Weeks<br/>───────────<br/>Monitor SLOs 72h<br/>Check error rates<br/>Verify autoscaling<br/>Update runbooks<br/>Delete old pool<br/>Close change ticket"]:::post
+    D --> P --> V --> PROD --> POST
+    classDef disc fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef prep fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef val fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef prod fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef post fill:#164e63,stroke:#2dd4bf,color:#e2e8f0,stroke-width:2px
+        </pre></div>
     </div>
 
     <!-- Pre-Upgrade Checklist -->
@@ -1259,31 +1494,22 @@ Each phase uses <span class="hl">dual-write + CDC</span> to maintain consistency
     <!-- Blue-Green Node Pool Upgrade Strategy -->
     <div class="card">
         <h2>🔵🟢 Blue-Green Node Pool Upgrade</h2>
-        <div class="diagram">
-<span class="hl">Step 1: Upgrade Control Plane Only</span>
-  az aks upgrade -g <span class="hl2">rg-aks-store-demo</span> -n <span class="hl2">aks-store-demo</span> \
-    --kubernetes-version <span class="hl3">1.34</span> --control-plane-only
-
-<span class="hl">Step 2: Add New "Green" Node Pool at Target Version</span>
-  az aks nodepool add -g <span class="hl2">rg-aks-store-demo</span> --cluster-name <span class="hl2">aks-store-demo</span> \
-    --name <span class="hl2">green34</span> --node-count <span class="hl3">3</span> --node-vm-size <span class="hl3">Standard_DS2_v2</span> \
-    --kubernetes-version <span class="hl3">1.34</span> --max-pods <span class="hl3">250</span>
-
-<span class="hl">Step 3: Cordon Old "Blue" Nodes</span>
-  kubectl cordon -l agentpool=<span class="hl2">nodepool1</span>
-
-<span class="hl">Step 4: Drain Old Nodes (respecting PDBs)</span>
-  kubectl drain -l agentpool=<span class="hl2">nodepool1</span> \
-    --ignore-daemonsets --delete-emptydir-data --grace-period=<span class="hl3">60</span>
-
-<span class="hl">Step 5: Validate Green Pool Health</span>
-  kubectl get nodes -l agentpool=<span class="hl2">green34</span>
-  kubectl get pods -A -o wide | grep <span class="hl2">green34</span>
-  <span class="hl4">→ Run smoke tests, check SLOs for 1-2 hours</span>
-
-<span class="hl">Step 6: Delete Old "Blue" Node Pool</span>
-  az aks nodepool delete -g <span class="hl2">rg-aks-store-demo</span> --cluster-name <span class="hl2">aks-store-demo</span> \
-    --name <span class="hl2">nodepool1</span> --no-wait</div>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    S1["☸️ Step 1: Upgrade Control Plane\naz aks upgrade --control-plane-only\n-k 1.34"]:::step1
+    S2["🟢 Step 2: Add Green Node Pool\naz aks nodepool add --name green34\n--node-count 3 --node-vm-size DS2_v2"]:::step2
+    S3["🚫 Step 3: Cordon Blue Nodes\nkubectl cordon -l agentpool=nodepool1"]:::step3
+    S4["💧 Step 4: Drain Blue Nodes\nkubectl drain --ignore-daemonsets\n--grace-period=60"]:::step4
+    S5["✅ Step 5: Validate Green Health\nkubectl get nodes/pods\nSmoke tests · SLOs 1-2 hours"]:::step5
+    S6["🗑️ Step 6: Delete Blue Pool\naz aks nodepool delete\n--name nodepool1"]:::step6
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    classDef step1 fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef step2 fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef step3 fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef step4 fill:#7f1d1d,stroke:#f87171,color:#e2e8f0,stroke-width:2px
+    classDef step5 fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef step6 fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+        </pre></div>
     </div>
 
     <!-- Upgrade Schedule Planner Link -->
@@ -1342,17 +1568,57 @@ az aks maintenanceconfiguration add -g <span class="string">rg-aks-store-demo</s
 
 </div><!-- /main -->
 
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
-// Nav handler
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+        darkMode: true,
+        background: '#0f172a',
+        primaryColor: '#1e3a5f',
+        primaryTextColor: '#e2e8f0',
+        primaryBorderColor: '#38bdf8',
+        lineColor: '#94a3b8',
+        secondaryColor: '#164e63',
+        tertiaryColor: '#334155',
+        fontFamily: 'Segoe UI, system-ui, sans-serif'
+    },
+    flowchart: { curve: 'basis', htmlLabels: true }
+});
+</script>
+<script>
+// Navigate to a section by name
+function navigateTo(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    const sec = document.getElementById('sec-' + name);
+    const btn = document.querySelector('.nav button[data-section="' + name + '"]');
+    if (sec) sec.classList.add('active');
+    if (btn) btn.classList.add('active');
+    window.scrollTo({top: 0});
+}
+
+// Nav click → update hash
 document.getElementById('mainNav').addEventListener('click', e => {
     if (e.target.tagName === 'BUTTON') {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-        const sec = document.getElementById('sec-' + e.target.dataset.section);
-        if (sec) sec.classList.add('active');
-        e.target.classList.add('active');
+        const section = e.target.dataset.section;
+        history.pushState(null, '', '#' + section);
+        navigateTo(section);
     }
 });
+
+// Back/forward
+window.addEventListener('hashchange', () => {
+    const h = location.hash.replace('#','');
+    if (h) navigateTo(h);
+});
+
+// On load: read hash
+(function() {
+    const h = location.hash.replace('#','');
+    if (h) navigateTo(h);
+})();
 </script>
 </body>
 </html>
