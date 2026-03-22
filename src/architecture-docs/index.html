@@ -203,7 +203,7 @@ tr:hover td{background:rgba(56,189,248,.03);}
 flowchart TD
     EXT(["🌐 External Consumers\nPortal · Mobile App · Partner APIs"]):::ext
     APIM["🔀 Azure API Management\nRate Limiting · OAuth · Versioning\nAnalytics · Request Transform"]:::apim
-    subgraph AKS["☸️ AKS Cluster — Istio Service Mesh"]
+    subgraph AKS["AKS Cluster - Istio Service Mesh"]
         PS["👤 Patient\nService"]:::svc
         CS["📋 Clinical\nService"]:::svc
         SS["📅 Scheduling\nService"]:::svc
@@ -750,15 +750,15 @@ flowchart LR
         <h2>📤 CQRS Read/Write Separation</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    subgraph Write["✏️ Commands — Write Path"]
+    subgraph Write["Commands - Write Path"]
         WA["Command API\nPOST / PUT / DELETE"]:::write
         WH["Command Handler\nMediatR"]:::handler
-        WD[("🗄️ Write DB\nPostgreSQL\nNormalized")]:::writedb
+        WD[("Write DB\nPostgreSQL\nNormalized")]:::writedb
     end
-    subgraph Read["📖 Queries — Read Path"]
+    subgraph Read["Queries - Read Path"]
         RA["Query API\nGET"]:::read
         RH["Query Handler\nDapper"]:::handler
-        RD[("⚡ Read Store\nRedis / Cosmos\nDenormalized")]:::readdb
+        RD[("Read Store\nRedis / Cosmos\nDenormalized")]:::readdb
     end
     WA --> WH --> WD
     RA --> RH --> RD
@@ -803,13 +803,13 @@ flowchart TD
         ING["📥 INGRESS POLICIES\nJWT Validation · Rate Limiting\nIP Filtering · OAuth 2.0 Scopes\nQuota Enforcement · Throttling\nCorrelation ID Inject"]:::ing
         EGR["📤 EGRESS POLICIES\nResponse Caching · CORS Headers\nContent Negotiation · Error Masking\nFHIR Compliance · gzip\nETag Generation"]:::egr
     end
-    subgraph GW["☸️ AKS Internal Gateway — Istio"]
-        R1["👤 /api/v1/patients → patient-service:8081"]:::route
-        R2["📋 /api/v1/encounters → clinical-service:8082"]:::route
-        R3["📅 /api/v1/appointments → scheduling:8083"]:::route
-        R4["💊 /api/v1/prescriptions → pharmacy:8084"]:::route
-        R5["🔬 /api/v1/labs → lab-service:8085"]:::route
-        R6["🩺 /api/v1/providers → provider-service:8086"]:::route
+    subgraph GW["AKS Internal Gateway - Istio"]
+        R1["/api/v1/patients -> patient-service:8081"]:::route
+        R2["/api/v1/encounters -> clinical-service:8082"]:::route
+        R3["/api/v1/appointments -> scheduling:8083"]:::route
+        R4["/api/v1/prescriptions -> pharmacy:8084"]:::route
+        R5["/api/v1/labs -> lab-service:8085"]:::route
+        R6["/api/v1/providers -> provider-service:8086"]:::route
     end
     ING -->|Inbound| GW
     GW -->|Outbound| EGR
@@ -917,13 +917,13 @@ flowchart TD
         <h2>🏗️ Azure Resource Topology</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    subgraph SUB["☁️ Azure Subscription<br/>e62428e7-08dd-..."]
-        subgraph RG["📦 Resource Group: rg-aks-store-demo"]
-            AKS["☸️ AKS Cluster<br/>3 nodes · DS2_v2<br/>K8s 1.33"]:::aks
-            APIM["🔀 APIM Gateway<br/>Standard tier"]:::apim
-            EH["📡 Azure Event Hubs<br/>Kafka-compatible<br/>12 partitions/topic"]:::bus
-            PG[("🐘 PostgreSQL Flexible<br/>ehrdb B2s · patient-db<br/>clinical-db · scheduling-db")]:::db
-            ACR["🐳 Container Registry<br/>ehracrcanada<br/>Premium · Geo-replication"]:::acr
+    subgraph SUB["Azure Subscription"]
+        subgraph RG["Resource Group: rg-aks-store-demo"]
+            AKS["AKS Cluster\n3 nodes DS2_v2\nK8s 1.33"]:::aks
+            APIM["APIM Gateway\nStandard tier"]:::apim
+            EH["Azure Event Hubs\nKafka-compatible\n12 partitions/topic"]:::bus
+            PG[("PostgreSQL Flexible\nehrdb B2s\npatient-db, clinical-db")]:::db
+            ACR["Container Registry\nehracrcanada\nPremium, Geo-replication"]:::acr
         end
     end
     AKS --- APIM
@@ -988,14 +988,14 @@ flowchart TD
         <p style="color:var(--muted);margin-bottom:1rem;">Every request is authenticated, authorized, and encrypted — regardless of network location. No implicit trust based on IP, VNet, or service identity alone.</p>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    INT(["🌐 Internet"]):::ext
-    WAF["🛡️ Azure WAF<br/>DDoS · OWASP rules"]:::waf
-    APIM["🔀 APIM<br/>JWT · Rate Limiting"]:::apim
-    ISTIO["🔒 Istio Gateway<br/>mTLS between all pods"]:::istio
+    INT(["Internet"]):::ext
+    WAF["Azure WAF\nDDoS, OWASP rules"]:::waf
+    APIM["APIM\nJWT, Rate Limiting"]:::apim
+    ISTIO["Istio Gateway\nmTLS between all pods"]:::istio
     SA["Service A"]:::svc
     SB["Service B"]:::svc
     SC["Service C"]:::svc
-    DNS[("🔏 Azure Private DNS<br/>*.postgres.database.azure<br/>*.redis.cache.windows.net")]:::dns
+    DNS[("Azure Private DNS\n*.postgres.database.azure\n*.redis.cache.windows.net")]:::dns
     INT -->|HTTPS| WAF
     WAF --> APIM
     APIM -->|Private Link| ISTIO
@@ -1037,26 +1037,26 @@ flowchart TD
         <h2>🔑 Identity &amp; Access Management (IAM)</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart LR
-    subgraph ENTRA["🔐 Azure Entra ID"]
+    subgraph ENTRA["Azure Entra ID"]
         direction TB
-        subgraph AR["📋 App Registrations"]
-            A1["ehr-api-app<br/>client_id"]:::app
-            A2["ehr-portal-spa<br/>public client"]:::app
-            A3["ehr-partner-daemon<br/>client secret"]:::app
+        subgraph AR["App Registrations"]
+            A1["ehr-api-app\nclient_id"]:::app
+            A2["ehr-portal-spa\npublic client"]:::app
+            A3["ehr-partner-daemon\nclient secret"]:::app
         end
-        subgraph EA["🏢 Enterprise Apps"]
-            E1["APIM Service<br/>Principal"]:::ent
-            E2["AKS Managed<br/>Identity"]:::ent
-            E3["ACR Pull<br/>Identity"]:::ent
+        subgraph EA["Enterprise Apps"]
+            E1["APIM Service\nPrincipal"]:::ent
+            E2["AKS Managed\nIdentity"]:::ent
+            E3["ACR Pull\nIdentity"]:::ent
         end
-        subgraph ROLES["👥 App Roles"]
+        subgraph ROLES["App Roles"]
             R1["EHR.Admin"]:::role
             R2["EHR.Clinician"]:::role
             R3["EHR.Nurse"]:::role
             R4["EHR.LabTech"]:::role
             R5["EHR.Emergency"]:::role
         end
-        subgraph SCOPES["🔑 OAuth 2.0 Scopes"]
+        subgraph SCOPES["OAuth 2.0 Scopes"]
             S1["patient.read/write"]:::scope
             S2["encounter.read"]:::scope
             S3["prescription.write"]:::scope
@@ -1307,27 +1307,27 @@ flowchart LR
         <h2>🗄️ Database Migration Strategy</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    subgraph Current["🗄️ Current State"]
-        DB0[("ehrdb<br/>All 8 tables")]:::current
+    subgraph Current["Current State"]
+        DB0[("ehrdb - All 8 tables")]:::current
     end
-    subgraph P1["Phase 1 — Foundation"]
-        DB1A[("patient-db<br/>patients, allergies, vitals")]:::new
-        DB1B[("ehrdb remaining<br/>appointments, records,<br/>prescriptions, labs, providers")]:::old
+    subgraph P1["Phase 1: Foundation"]
+        DB1A[("patient-db - patients, allergies, vitals")]:::new
+        DB1B[("ehrdb remaining - appointments, records, prescriptions, labs, providers")]:::old
     end
-    subgraph P2["Phase 2 — Clinical"]
+    subgraph P2["Phase 2: Clinical"]
         DB2A[("patient-db")]:::new
-        DB2B[("clinical-db<br/>medical_records")]:::new
-        DB2C[("pharmacy-db<br/>prescriptions")]:::new
-        DB2D[("lab-db<br/>lab_results")]:::new
-        DB2E[("ehrdb shrinking<br/>appointments, providers")]:::old
+        DB2B[("clinical-db - medical_records")]:::new
+        DB2C[("pharmacy-db - prescriptions")]:::new
+        DB2D[("lab-db - lab_results")]:::new
+        DB2E[("ehrdb shrinking - appointments, providers")]:::old
     end
-    subgraph P3["Phase 3 — Full Platform"]
+    subgraph P3["Phase 3: Full Platform"]
         DB3A[("patient-db")]:::done
         DB3B[("clinical-db")]:::done
-        DB3C[("scheduling-db<br/>appointments")]:::done
+        DB3C[("scheduling-db - appointments")]:::done
         DB3D[("pharmacy-db")]:::done
         DB3E[("lab-db")]:::done
-        DB3F[("provider-db<br/>providers")]:::done
+        DB3F[("provider-db - providers")]:::done
     end
     Current -->|"dual-write + CDC"| P1
     P1 -->|"dual-write + CDC"| P2
@@ -1399,11 +1399,11 @@ flowchart TD
         <h2>🔄 Upgrade Execution Phases</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart LR
-    D["🔍 DISCOVERY<br/>Week -8 to -6<br/>───────────<br/>Review changelog<br/>Check API deprecations<br/>Audit add-on versions<br/>Review CVEs<br/>Capacity planning<br/>Stakeholder sign-off"]:::disc
-    P["🛠️ PREPARATION<br/>Week -5 to -3<br/>───────────<br/>Update Helm charts<br/>Update Dockerfiles<br/>Pin add-on versions<br/>Update PDBs<br/>Network policies<br/>Rollback plan"]:::prep
-    V["✅ VALIDATION<br/>Week -2 to -1<br/>───────────<br/>Upgrade staging AKS<br/>Full test suite<br/>Load test 50% prod<br/>Validate monitoring<br/>DR rehearsal<br/>Change Advisory Board"]:::val
-    PROD["🚀 PRODUCTION<br/>Deploy Day<br/>───────────<br/>Upgrade control plane<br/>Surge node pool<br/>Drain old nodes<br/>Smoke tests<br/>Health checks"]:::prod
-    POST["📊 POST-UPGRADE<br/>+1 to +2 Weeks<br/>───────────<br/>Monitor SLOs 72h<br/>Check error rates<br/>Verify autoscaling<br/>Update runbooks<br/>Delete old pool<br/>Close change ticket"]:::post
+    D["DISCOVERY\nWeek -8 to -6\nReview changelog\nCheck API deprecations\nAudit add-on versions\nReview CVEs\nCapacity planning\nStakeholder sign-off"]:::disc
+    P["PREPARATION\nWeek -5 to -3\nUpdate Helm charts\nUpdate Dockerfiles\nPin add-on versions\nUpdate PDBs\nNetwork policies\nRollback plan"]:::prep
+    V["VALIDATION\nWeek -2 to -1\nUpgrade staging AKS\nFull test suite\nLoad test 50% prod\nValidate monitoring\nDR rehearsal\nChange Advisory Board"]:::val
+    PROD["PRODUCTION\nDeploy Day\nUpgrade control plane\nSurge node pool\nDrain old nodes\nSmoke tests\nHealth checks"]:::prod
+    POST["POST-UPGRADE\n+1 to +2 Weeks\nMonitor SLOs 72h\nCheck error rates\nVerify autoscaling\nUpdate runbooks\nDelete old pool\nClose change ticket"]:::post
     D --> P --> V --> PROD --> POST
     classDef disc fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
     classDef prep fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EHR API — Version Catalog</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}
+a:hover{text-decoration:underline;filter:brightness(1.2);}
+code{background:var(--surface2);padding:.15rem .4rem;border-radius:4px;font-size:.85em;font-family:'Cascadia Code','Fira Code',monospace;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#065f46 40%,#164e63 70%,#0f172a 100%);padding:3.5rem 2rem 2.5rem;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(52,211,153,.08) 0%,transparent 70%);pointer-events:none;}
+.hero h1{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#34d399,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.4rem;}
+.hero .tagline{color:var(--muted);font-size:1.1rem;max-width:750px;margin:0 auto 1.5rem;}
+.hero .nav-links{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.hero .nav-links a{padding:.5rem 1.2rem;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);font-size:.85rem;font-weight:600;}
+.hero .nav-links a:hover{border-color:var(--accent);background:rgba(56,189,248,.08);text-decoration:none;}
+.container{max-width:1200px;margin:0 auto;padding:2.5rem 2rem;}
+
+/* Version comparison bar */
+.version-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
+@media(max-width:768px){.version-bar{grid-template-columns:1fr;}}
+.vb{border-radius:16px;padding:1.5rem;text-align:center;border:2px solid;transition:transform .2s,box-shadow .2s;}
+.vb:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3);}
+.vb.v1{background:rgba(52,211,153,.05);border-color:var(--green);}
+.vb.v2{background:rgba(56,189,248,.05);border-color:var(--accent);}
+.vb.v3{background:rgba(167,139,250,.05);border-color:var(--purple);}
+.vb .ver{font-size:2.5rem;font-weight:900;}
+.vb.v1 .ver{color:var(--green);}
+.vb.v2 .ver{color:var(--accent);}
+.vb.v3 .ver{color:var(--purple);}
+.vb .vtitle{font-size:1rem;font-weight:700;margin:.2rem 0 .1rem;}
+.vb .vstatus{font-size:.75rem;font-weight:700;padding:.2rem .7rem;border-radius:5px;display:inline-block;margin-bottom:.5rem;}
+.vb.v1 .vstatus{background:rgba(52,211,153,.15);color:var(--green);}
+.vb.v2 .vstatus{background:rgba(56,189,248,.15);color:var(--accent);}
+.vb.v3 .vstatus{background:rgba(167,139,250,.15);color:var(--purple);}
+.vb .vcount{font-size:.9rem;color:var(--muted);}
+
+/* Section */
+.sec{margin-bottom:3rem;}
+.sec h2{font-size:1.6rem;font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.6rem;}
+.sec .sub{color:var(--muted);font-size:.95rem;margin-bottom:1.5rem;max-width:800px;}
+
+/* Endpoint cards */
+.ep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:1.25rem;}
+@media(max-width:600px){.ep-grid{grid-template-columns:1fr;}}
+.ep{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+.ep:hover{border-color:var(--accent);}
+.ep-head{padding:1rem 1.25rem .5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+.method{font-size:.7rem;font-weight:800;padding:.25rem .6rem;border-radius:5px;letter-spacing:.5px;font-family:'Cascadia Code','Fira Code',monospace;}
+.method.GET{background:rgba(52,211,153,.15);color:var(--green);}
+.method.POST{background:rgba(56,189,248,.15);color:var(--accent);}
+.method.PUT{background:rgba(251,146,60,.15);color:var(--orange);}
+.method.PATCH{background:rgba(167,139,250,.15);color:var(--purple);}
+.method.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.ep-path{font-family:'Cascadia Code','Fira Code',monospace;font-size:.9rem;font-weight:600;color:var(--text);}
+.ep-body{padding:.5rem 1.25rem 1.25rem;}
+.ep-desc{color:var(--muted);font-size:.85rem;margin-bottom:.75rem;}
+.ep-params{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;}
+.param{background:var(--bg);border:1px solid rgba(71,85,105,.5);border-radius:5px;padding:.2rem .5rem;font-size:.75rem;color:var(--text);}
+.param b{color:var(--accent);}
+.ep-returns{font-size:.8rem;color:var(--muted);}
+.ep-returns code{color:var(--green);}
+
+/* Feature tables */
+table{width:100%;border-collapse:collapse;font-size:.9rem;margin-bottom:1.5rem;}
+th{color:var(--accent);padding:.6rem .8rem;text-align:left;font-weight:600;border-bottom:2px solid var(--border);background:var(--surface2);}
+td{padding:.6rem .8rem;border-bottom:1px solid rgba(71,85,105,.4);}
+.badge{padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:600;}
+.badge.green{background:rgba(52,211,153,.15);color:var(--green);}
+.badge.blue{background:rgba(56,189,248,.15);color:var(--accent);}
+.badge.purple{background:rgba(167,139,250,.15);color:var(--purple);}
+.badge.orange{background:rgba(251,146,60,.15);color:var(--orange);}
+.badge.red{background:rgba(248,113,113,.15);color:var(--red);}
+
+/* Cards for features */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-bottom:2rem;}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:border-color .2s;}
+.feat:hover{border-color:var(--accent);}
+.feat h3{font-size:1rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;}
+.feat p{color:var(--muted);font-size:.85rem;}
+.feat ul{list-style:none;margin-top:.5rem;}
+.feat ul li{font-size:.85rem;color:var(--muted);padding:.15rem 0;display:flex;gap:.4rem;}
+.feat ul li::before{content:'›';color:var(--accent);font-weight:700;}
+
+/* Code block */
+.codeblock{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;font-family:'Cascadia Code','Fira Code',monospace;font-size:.85rem;overflow-x:auto;color:var(--muted);white-space:pre-wrap;}
+.codeblock .kw{color:var(--accent);}
+.codeblock .str{color:var(--green);}
+.codeblock .cmt{color:var(--muted);font-style:italic;}
+
+/* Roadmap */
+.timeline{position:relative;padding-left:2rem;margin:1rem 0 2rem;}
+.timeline::before{content:'';position:absolute;left:.75rem;top:0;bottom:0;width:2px;background:var(--border);}
+.tl-item{position:relative;padding-bottom:1.5rem;}
+.tl-item::before{content:'';position:absolute;left:-1.3rem;top:.35rem;width:12px;height:12px;border-radius:50%;border:2px solid;}
+.tl-item.done::before{background:var(--green);border-color:var(--green);}
+.tl-item.active::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(56,189,248,.4);}
+.tl-item.future::before{background:transparent;border-color:var(--purple);}
+.tl-item h4{font-size:1rem;font-weight:700;margin-bottom:.2rem;}
+.tl-item p{font-size:.85rem;color:var(--muted);}
+
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}
+.footer a{color:var(--accent);}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.25rem;border-radius:8px;font-size:.85rem;font-weight:600;text-decoration:none;transition:all .2s;}
+.btn:hover{text-decoration:none;filter:brightness(1.15);transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-green{background:var(--green);color:var(--bg);}
+.btn-purple{background:var(--purple);color:var(--bg);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+    <h1>⚙️ EHR API — Version Catalog</h1>
+    <p class="tagline">Three API versions spanning stable CRUD operations (v1), enhanced DTO-based endpoints with pagination (v2), and future AI/FHIR capabilities (v3). URL-segment, header, and query-string versioning supported.</p>
+    <div class="nav-links">
+        <a href="/">← Landing Portal</a>
+        <a href="/architecture.html#versioning">Versioning Strategy</a>
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank">Swagger UI ↗</a>
+        <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub ↗</a>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- ===== VERSION COMPARISON ===== -->
+<div class="version-bar">
+    <div class="vb v1">
+        <div class="ver">v1</div>
+        <div class="vtitle">Stable Release</div>
+        <div class="vstatus">PRODUCTION</div>
+        <div class="vcount">8 Controllers · 30+ Endpoints</div>
+    </div>
+    <div class="vb v2">
+        <div class="ver">v2</div>
+        <div class="vtitle">Enhanced</div>
+        <div class="vstatus">CURRENT</div>
+        <div class="vcount">7 Controllers · 20+ Endpoints</div>
+    </div>
+    <div class="vb v3">
+        <div class="ver">v3</div>
+        <div class="vtitle">Future Preview</div>
+        <div class="vstatus">PREVIEW</div>
+        <div class="vcount">4 Controllers · 12+ Endpoints</div>
+    </div>
+</div>
+
+<!-- ===== VERSIONING STRATEGY ===== -->
+<div class="sec">
+    <h2>🔀 Versioning Strategy</h2>
+    <p class="sub">The API supports three simultaneous version readers — URL segment (preferred), custom header, and query string. All v1 routes remain backward-compatible at their original paths.</p>
+
+    <table>
+        <tr><th>Method</th><th>Format</th><th>Example</th><th>Priority</th></tr>
+        <tr><td><b>URL Segment</b></td><td><code>/api/v{N}/resource</code></td><td><code>/api/v2/patients</code></td><td><span class="badge green">Preferred</span></td></tr>
+        <tr><td><b>Header</b></td><td><code>X-Api-Version: N</code></td><td><code>X-Api-Version: 2</code></td><td><span class="badge blue">Supported</span></td></tr>
+        <tr><td><b>Query String</b></td><td><code>?api-version=N</code></td><td><code>/api/patients?api-version=2</code></td><td><span class="badge orange">Supported</span></td></tr>
+        <tr><td><b>Legacy (v1 only)</b></td><td><code>/api/resource</code></td><td><code>/api/patients</code></td><td><span class="badge purple">Backward compat</span></td></tr>
+    </table>
+
+    <div class="codeblock"><span class="cmt">// Program.cs — Multi-version configuration</span>
+builder.Services.AddApiVersioning(options => {
+    options.DefaultApiVersion = <span class="kw">new</span> ApiVersion(<span class="str">1</span>, <span class="str">0</span>);
+    options.AssumeDefaultVersionWhenUnspecified = <span class="kw">true</span>;
+    options.ReportApiVersions = <span class="kw">true</span>;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        <span class="kw">new</span> UrlSegmentApiVersionReader(),
+        <span class="kw">new</span> HeaderApiVersionReader(<span class="str">"X-Api-Version"</span>),
+        <span class="kw">new</span> QueryStringApiVersionReader(<span class="str">"api-version"</span>));
+});</div>
+</div>
+
+<!-- ===== V1 — STABLE ===== -->
+<div class="sec" id="v1">
+    <h2 style="color:var(--green);">🟢 API v1 — Stable Release</h2>
+    <p class="sub">The original API with full CRUD operations across 8 domain entities. Entity Framework Core models returned directly. No pagination — returns all matching records. Backward-compatible at both <code>/api/v1/</code> and legacy <code>/api/</code> paths.</p>
+
+    <h3 style="margin-bottom:1rem;">Endpoints</h3>
+    <div class="ep-grid">
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v1/patients</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">List all patients with optional name search. Returns full entity including navigation property stubs.</p>
+                <div class="ep-params"><span class="param"><b>?search</b>=lastName</span></div>
+                <p class="ep-returns">Returns: <code>Patient[]</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v1/patients/{id}</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Get single patient with allergies and last 5 vitals included.</p>
+                <p class="ep-returns">Returns: <code>Patient</code> (with includes)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method POST">POST</span>
+                <span class="ep-path">/api/v1/patients</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Create new patient. Auto-sets CreatedAt/UpdatedAt timestamps.</p>
+                <p class="ep-returns">Returns: <code>201 Created</code> + <code>Patient</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method PUT">PUT</span>
+                <span class="ep-path">/api/v1/patients/{id}</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Full-entity update. Preserves original CreatedAt timestamp.</p>
+                <p class="ep-returns">Returns: <code>204 No Content</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v1/appointments</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">List appointments with multi-filter support.</p>
+                <div class="ep-params"><span class="param"><b>?patientId</b>=int</span><span class="param"><b>?providerId</b>=int</span><span class="param"><b>?status</b>=string</span><span class="param"><b>?date</b>=DateTime</span></div>
+                <p class="ep-returns">Returns: <code>Appointment[]</code> (includes Patient &amp; Provider)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method PATCH">PATCH</span>
+                <span class="ep-path">/api/v1/appointments/{id}/status</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Quick status update: Scheduled → Checked-In → In-Progress → Completed / Cancelled.</p>
+                <p class="ep-returns">Returns: <code>204 No Content</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v1/prescriptions</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Filter prescriptions by patient and status.</p>
+                <div class="ep-params"><span class="param"><b>?patientId</b>=int</span><span class="param"><b>?status</b>=Active|Completed|Cancelled</span></div>
+                <p class="ep-returns">Returns: <code>Prescription[]</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v1/labresults</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Filter lab results by patient and status.</p>
+                <div class="ep-params"><span class="param"><b>?patientId</b>=int</span><span class="param"><b>?status</b>=Pending|Completed|Reviewed</span></div>
+                <p class="ep-returns">Returns: <code>LabResult[]</code></p>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin:1.5rem 0 1rem;">All v1 Controllers</h3>
+    <table>
+        <tr><th>Controller</th><th>Route</th><th>Methods</th><th>Filters</th><th>Entities</th></tr>
+        <tr><td><b>PatientsController</b></td><td><code>/api/v1/patients</code></td><td>GET, POST, PUT, DELETE</td><td>search (name)</td><td>Patient + Allergies + Vitals</td></tr>
+        <tr><td><b>ProvidersController</b></td><td><code>/api/v1/providers</code></td><td>GET, POST, PUT</td><td>specialty</td><td>Provider</td></tr>
+        <tr><td><b>AppointmentsController</b></td><td><code>/api/v1/appointments</code></td><td>GET, POST, PUT, PATCH</td><td>patientId, providerId, status, date</td><td>Appointment + Patient + Provider</td></tr>
+        <tr><td><b>MedicalRecordsController</b></td><td><code>/api/v1/medicalrecords</code></td><td>GET, POST, PUT</td><td>patientId</td><td>MedicalRecord + Patient + Provider</td></tr>
+        <tr><td><b>PrescriptionsController</b></td><td><code>/api/v1/prescriptions</code></td><td>GET, POST, PATCH</td><td>patientId, status</td><td>Prescription + Patient + Provider</td></tr>
+        <tr><td><b>LabResultsController</b></td><td><code>/api/v1/labresults</code></td><td>GET, POST, PATCH</td><td>patientId, status</td><td>LabResult + Patient</td></tr>
+        <tr><td><b>AllergiesController</b></td><td><code>/api/v1/allergies</code></td><td>GET, POST, DELETE</td><td>patientId (required)</td><td>Allergy</td></tr>
+        <tr><td><b>VitalsController</b></td><td><code>/api/v1/vitals</code></td><td>GET, POST</td><td>patientId (required), count</td><td>Vitals</td></tr>
+    </table>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger/index.html?urls.primaryName=EHR+API+v1" target="_blank" class="btn btn-green">Open v1 Swagger →</a>
+    </div>
+</div>
+
+<!-- ===== V2 — ENHANCED ===== -->
+<div class="sec" id="v2">
+    <h2 style="color:var(--accent);">🔵 API v2 — Enhanced</h2>
+    <p class="sub">Production-ready evolution with DTO-based responses, server-side pagination (PagedResult), clinical dashboard, patient summary endpoints, provider workload metrics, and advanced sorting/filtering. No raw EF entities leak through — all responses use purpose-built DTOs.</p>
+
+    <h3 style="margin-bottom:1rem;">Key Improvements over v1</h3>
+    <div class="feat-grid">
+        <div class="feat" style="border-top:3px solid var(--accent);">
+            <h3>📄 Pagination</h3>
+            <p>Every list endpoint returns <code>PagedResult&lt;T&gt;</code> with <code>items</code>, <code>totalCount</code>, <code>page</code>, <code>pageSize</code>, <code>totalPages</code>, <code>hasNextPage</code>, <code>hasPreviousPage</code>. Max 100 items per page.</p>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--green);">
+            <h3>🎯 DTO Responses</h3>
+            <p>Dedicated record DTOs for list views vs. detail views. No EF entity cycles, no over-fetching. <code>PatientListDto</code> has allergy count and active Rx count as computed fields.</p>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--purple);">
+            <h3>📊 Clinical Dashboard</h3>
+            <p>New <code>/api/v2/dashboard</code> — real-time KPIs: total patients, active providers, today's appointments, pending labs, active prescriptions, critical alerts.</p>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--orange);">
+            <h3>🩺 Clinical Summary</h3>
+            <p><code>/api/v2/patients/{id}/clinical-summary</code> — single endpoint returning complete patient context: demographics, allergies, vitals, appointments, records, prescriptions, labs.</p>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--teal);">
+            <h3>📅 Provider Schedule</h3>
+            <p><code>/api/v2/providers/{id}/schedule</code> — date-range filtered appointment list. <code>ProviderDetailDto</code> includes workload metrics: today/week/month appointment counts.</p>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--pink);">
+            <h3>🔍 Advanced Filters</h3>
+            <p>Multi-column sort (<code>sortBy</code>, <code>sortDir</code>), gender filter, medication name search, encounter type filter, diagnosis code search, date range for appointments.</p>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom:1rem;">Endpoints</h3>
+    <div class="ep-grid">
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/patients</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Paginated patient list with search across name, email, and insurance ID. Sortable by lastName, firstName, dob, or createdAt.</p>
+                <div class="ep-params"><span class="param"><b>?search</b></span><span class="param"><b>?gender</b></span><span class="param"><b>?sortBy</b>=lastName</span><span class="param"><b>?sortDir</b>=asc|desc</span><span class="param"><b>?page</b>=1</span><span class="param"><b>?pageSize</b>=20</span></div>
+                <p class="ep-returns">Returns: <code>PagedResult&lt;PatientListDto&gt;</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/patients/{id}</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Detailed patient with allergies, recent vitals, and computed stats (total appointments, records, active prescriptions, pending labs, last visit date).</p>
+                <p class="ep-returns">Returns: <code>PatientDetailDto</code> (includes <code>PatientStatsDto</code>)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/patients/{id}/clinical-summary</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Complete clinical summary — patient detail + last 10 appointments + last 10 records + active prescriptions + pending labs. Single call for full patient context.</p>
+                <p class="ep-returns">Returns: <code>PatientClinicalSummary</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/dashboard</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Clinical dashboard KPIs with upcoming appointments and critical lab alerts.</p>
+                <p class="ep-returns">Returns: <code>ClinicalDashboardDto</code> (6 KPIs + 2 lists)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/providers/{id}/schedule</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Provider's appointment schedule for a date range.</p>
+                <div class="ep-params"><span class="param"><b>?from</b>=DateTime</span><span class="param"><b>?to</b>=DateTime</span></div>
+                <p class="ep-returns">Returns: <code>AppointmentListDto[]</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/appointments/today</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Today's appointments across all providers, sorted by scheduled time.</p>
+                <p class="ep-returns">Returns: <code>AppointmentListDto[]</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/prescriptions</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Paginated prescriptions with patient, status, and medication name filters.</p>
+                <div class="ep-params"><span class="param"><b>?patientId</b></span><span class="param"><b>?status</b></span><span class="param"><b>?medication</b></span><span class="param"><b>?page</b></span><span class="param"><b>?pageSize</b></span></div>
+                <p class="ep-returns">Returns: <code>PagedResult&lt;PrescriptionDto&gt;</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v2/labresults</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Paginated lab results with patient, status, flag, and test name filters.</p>
+                <div class="ep-params"><span class="param"><b>?patientId</b></span><span class="param"><b>?status</b></span><span class="param"><b>?flag</b>=Critical|High|Low</span><span class="param"><b>?testName</b></span></div>
+                <p class="ep-returns">Returns: <code>PagedResult&lt;LabResultDto&gt;</code></p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem;">
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger/index.html?urls.primaryName=EHR+API+v2" target="_blank" class="btn btn-primary">Open v2 Swagger →</a>
+    </div>
+</div>
+
+<!-- ===== V3 — FUTURE ===== -->
+<div class="sec" id="v3">
+    <h2 style="color:var(--purple);">🟣 API v3 — Future Preview</h2>
+    <p class="sub">Next-generation capabilities including HL7 FHIR R4 interoperability, AI-powered clinical decision support, predictive analytics, bulk export, and real-time event streaming. Returns simulated responses for demonstration — full implementation planned for Phase 3.</p>
+
+    <h3 style="margin-bottom:1rem;">Future Capabilities</h3>
+    <div class="feat-grid">
+        <div class="feat" style="border-top:3px solid var(--purple);">
+            <h3>🏥 FHIR R4 Patient</h3>
+            <p>HL7 FHIR-compliant Patient resource with Bundle search responses. Maps EHR patients to <code>StructureDefinition/us-core-patient</code>.</p>
+            <ul>
+                <li>Search by family, given, gender</li>
+                <li>FHIR Bundle searchset response</li>
+                <li>Identifier system for insurance</li>
+                <li>US Core profile compliance</li>
+            </ul>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--red);">
+            <h3>🤖 AI Decision Support</h3>
+            <p>Drug interaction checking, clinical guideline recommendations, and evidence-based care alerts powered by ML models.</p>
+            <ul>
+                <li>Drug-drug interaction detection</li>
+                <li>Severity scoring (Mild/Moderate/Severe)</li>
+                <li>Clinical guideline matching</li>
+                <li>Always includes safety disclaimer</li>
+            </ul>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--orange);">
+            <h3>📈 Predictive Analytics</h3>
+            <p>Readmission risk scoring based on patient history, population health insights with trend analysis.</p>
+            <ul>
+                <li>30-day readmission risk score</li>
+                <li>Contributing factor identification</li>
+                <li>Population health metrics</li>
+                <li>Trend analysis with change %</li>
+            </ul>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--teal);">
+            <h3>📡 Real-time Streaming</h3>
+            <p>Webhook-based event subscriptions for clinical events. Subscribe to patient, lab, vitals, and prescription events.</p>
+            <ul>
+                <li>12 event types across 6 categories</li>
+                <li>Webhook subscription management</li>
+                <li>Active subscription monitoring</li>
+                <li>Event type catalog endpoint</li>
+            </ul>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--accent);">
+            <h3>📦 Bulk FHIR Export</h3>
+            <p>Async bulk export jobs following FHIR Bulk Data specification. Export Patient, Observation, and MedicationRequest resources as NDJSON.</p>
+            <ul>
+                <li>Async job with status polling</li>
+                <li>NDJSON output format</li>
+                <li>Resource type selection</li>
+                <li>Since-date filtering</li>
+            </ul>
+        </div>
+        <div class="feat" style="border-top:3px solid var(--yellow);">
+            <h3>🔮 GraphQL Gateway</h3>
+            <p><em>Planned</em> — Single query endpoint for complex data requirements. Reduce over-fetching with field-level selection.</p>
+            <ul>
+                <li>Field-level data selection</li>
+                <li>Nested relationship traversal</li>
+                <li>Subscription for real-time updates</li>
+                <li>Schema introspection</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom:1rem;">Endpoints</h3>
+    <div class="ep-grid">
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v3/fhir/Patient</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">FHIR R4 Patient search — returns a Bundle searchset with US Core profile compliance.</p>
+                <div class="ep-params"><span class="param"><b>?family</b></span><span class="param"><b>?given</b></span><span class="param"><b>?gender</b></span><span class="param"><b>?_count</b>=20</span><span class="param"><b>?_offset</b>=0</span></div>
+                <p class="ep-returns">Returns: <code>FhirBundle</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v3/fhir/Patient/{id}</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Read single patient as FHIR Patient resource with meta, identifiers, and telecom.</p>
+                <p class="ep-returns">Returns: <code>FhirPatientResource</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method POST">POST</span>
+                <span class="ep-path">/api/v3/ai/drug-interactions</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Check for drug-drug interactions. Provide active diagnoses and current medications list.</p>
+                <p class="ep-returns">Returns: <code>ClinicalDecisionResponse</code> (interactions + guidelines)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method POST">POST</span>
+                <span class="ep-path">/api/v3/ai/guidelines</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Get evidence-based clinical guideline recommendations for diagnoses.</p>
+                <p class="ep-returns">Returns: <code>ClinicalDecisionResponse</code> (guidelines + actions)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v3/ai/readmission-risk/{patientId}</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Predict 30-day readmission risk based on patient history and clinical data.</p>
+                <p class="ep-returns">Returns: <code>ReadmissionRiskResponse</code> (score + factors)</p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v3/ai/population-health</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Population-level health insights and trend metrics across the patient census.</p>
+                <p class="ep-returns">Returns: <code>PopulationHealthInsight[]</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method POST">POST</span>
+                <span class="ep-path">/api/v3/bulk/export</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Start an async bulk FHIR export job. Select resource types and date filter.</p>
+                <p class="ep-returns">Returns: <code>202 Accepted</code> + <code>BulkExportStatus</code></p>
+            </div>
+        </div>
+        <div class="ep">
+            <div class="ep-head">
+                <span class="method GET">GET</span>
+                <span class="ep-path">/api/v3/streaming/event-types</span>
+            </div>
+            <div class="ep-body">
+                <p class="ep-desc">Catalog of all available streaming event types across 6 clinical categories.</p>
+                <p class="ep-returns">Returns: 12 event types with descriptions</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem;">
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger/index.html?urls.primaryName=EHR+API+v3" target="_blank" class="btn btn-purple">Open v3 Swagger →</a>
+    </div>
+</div>
+
+<!-- ===== VERSION FEATURE MATRIX ===== -->
+<div class="sec">
+    <h2>📋 Feature Comparison Matrix</h2>
+    <table>
+        <tr><th>Feature</th><th>v1 Stable</th><th>v2 Enhanced</th><th>v3 Preview</th></tr>
+        <tr><td>CRUD Operations</td><td><span class="badge green">✓ Full</span></td><td><span class="badge green">✓ Full</span></td><td><span class="badge purple">Partial</span></td></tr>
+        <tr><td>Pagination</td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ PagedResult</span></td><td><span class="badge green">✓ FHIR Bundle</span></td></tr>
+        <tr><td>Response Format</td><td>EF Entities</td><td>Purpose-built DTOs</td><td>FHIR Resources + DTOs</td></tr>
+        <tr><td>Sorting</td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ Multi-column</span></td><td><span class="badge orange">N/A</span></td></tr>
+        <tr><td>Clinical Dashboard</td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ Real-time KPIs</span></td><td><span class="badge green">✓ + Trends</span></td></tr>
+        <tr><td>Patient Summary</td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ Full summary</span></td><td><span class="badge green">✓ FHIR-aligned</span></td></tr>
+        <tr><td>Provider Schedule</td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ Date range</span></td><td><span class="badge orange">N/A</span></td></tr>
+        <tr><td>FHIR R4</td><td><span class="badge red">✗</span></td><td><span class="badge red">✗</span></td><td><span class="badge green">✓ Patient resource</span></td></tr>
+        <tr><td>AI/ML Decision Support</td><td><span class="badge red">✗</span></td><td><span class="badge red">✗</span></td><td><span class="badge purple">Preview (simulated)</span></td></tr>
+        <tr><td>Bulk Export</td><td><span class="badge red">✗</span></td><td><span class="badge red">✗</span></td><td><span class="badge purple">Stub (async)</span></td></tr>
+        <tr><td>Event Streaming</td><td><span class="badge red">✗</span></td><td><span class="badge red">✗</span></td><td><span class="badge purple">Stub (webhooks)</span></td></tr>
+        <tr><td>GraphQL</td><td><span class="badge red">✗</span></td><td><span class="badge red">✗</span></td><td><span class="badge orange">Planned</span></td></tr>
+    </table>
+</div>
+
+<!-- ===== ROADMAP ===== -->
+<div class="sec">
+    <h2>🗺️ API Version Roadmap</h2>
+    <div class="timeline">
+        <div class="tl-item done">
+            <h4>v1.0 — Foundation (Delivered)</h4>
+            <p>Full CRUD across 8 entities • EF Core Code-First • Swagger docs • Health checks • Docker multi-stage build • PostgreSQL integration • 133+ seed records</p>
+        </div>
+        <div class="tl-item done">
+            <h4>v2.0 — Enhanced (Delivered)</h4>
+            <p>DTO-based responses • Server-side pagination • Clinical dashboard • Patient clinical summary • Provider schedule + workload • Advanced filters and sorting</p>
+        </div>
+        <div class="tl-item active">
+            <h4>v3.0 — Future Preview (In Progress)</h4>
+            <p>FHIR R4 Patient resource • AI drug interaction checking • Readmission risk prediction • Population health insights • Bulk FHIR export • Event streaming subscriptions</p>
+        </div>
+        <div class="tl-item future">
+            <h4>v3.1 — FHIR Complete (Planned)</h4>
+            <p>Full FHIR resource coverage: Encounter, Observation, MedicationRequest, AllergyIntolerance, Condition • SMART on FHIR authorization • Subscription framework</p>
+        </div>
+        <div class="tl-item future">
+            <h4>v4.0 — Intelligent Platform (Vision)</h4>
+            <p>GraphQL gateway • Real ML models (Azure ML) • Natural language clinical search • Voice-to-note integration • Real-time vitals streaming via WebSocket</p>
+        </div>
+    </div>
+</div>
+
+</div><!-- /container -->
+
+<div class="footer">
+    <p>EHR API Version Catalog · <a href="/">Landing Portal</a> · <a href="/architecture.html">Architecture</a> · <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank">Swagger UI</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a> · March 2026</p>
+</div>
+
+</body>
+</html>

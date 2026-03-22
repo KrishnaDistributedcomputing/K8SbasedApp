@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EhrApi.Data;
 using EhrApi.Models;
+using Asp.Versioning;
 
 namespace EhrApi.Controllers;
 
+[ApiVersion(1.0)]
 [ApiController]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 public class AllergiesController : ControllerBase
 {
@@ -37,7 +40,9 @@ public class AllergiesController : ControllerBase
     }
 }
 
+[ApiVersion(1.0)]
 [ApiController]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Route("api/[controller]")]
 public class VitalsController : ControllerBase
 {
