@@ -75,18 +75,16 @@ code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83re
 
 <!-- How to Approach -->
 <div class="card">
-    <h2>How to Approach This Migration</h2>
+    <h2>Migration Approach</h2>
 
-    <h3>Step 1: Install the Facade (Week 1-2)</h3>
-    <p>Place NGINX Ingress + Azure APIM in front of the monolith. Initially, 100% of traffic proxies straight to the monolith. Nothing changes functionally — this just gives you the routing control you need.</p>
+    <h3>Step 1: Install the Facade</h3>
+    <p>Place NGINX Ingress + Azure APIM in front of the monolith. Initially, 100% of traffic proxies straight to the monolith. Nothing changes functionally — this gives you the routing control needed for per-path traffic splitting.</p>
     <div class="event-flow">
         <span class="box blue">Browser</span><span class="arr">→</span>
         <span class="box teal">APIM / Ingress (facade)</span><span class="arr">→</span>
         <span class="box red">Monolith (100% of traffic)</span>
     </div>
-    <div class="code">
-# NGINX Ingress rewrite rules — initially all traffic goes to monolith
-apiVersion: networking.k8s.io/v1
+    <div class="code">apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ehr-facade
@@ -102,49 +100,50 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: ehr-monolith    # <-- will change per-path as we migrate
+                name: ehr-monolith   # Changes per-path as services are extracted
                 port:
-                  number: 8080
-    </div>
+                  number: 8080</div>
+    <div class="highlight"><b>After first extraction:</b> The Ingress gains a second path rule sending <code>/api/v1/patients</code> to the new Patient Service while all other paths continue to the monolith. Each subsequent extraction adds one more path rule.</div>
 
-    <h3>Step 2: Pick the First Slice (Week 3)</h3>
-    <p>Choose the first bounded context to extract. The ideal first candidate has these properties:</p>
+    <h3>Step 2: Select Extraction Candidate</h3>
+    <p>Score each bounded context against five criteria to find the best first extraction target:</p>
     <table>
         <tr><th>Criterion</th><th>Why It Matters</th><th>Best First Candidate</th></tr>
-        <tr><td>Fewest inbound dependencies</td><td>Fewer callers = fewer things to redirect</td><td>Patient Service (everyone reads from it, few write to it)</td></tr>
-        <tr><td>Clear data ownership</td><td>Single database table cluster = clean extraction</td><td>Patients + Allergies + Vitals = one aggregate</td></tr>
-        <tr><td>Well-defined API surface</td><td>Existing REST-ish endpoints = less design work</td><td>/api/v1/patients already exists</td></tr>
-        <tr><td>High business value</td><td>Proves the pattern delivers real benefits</td><td>Patient Service = most-used, highest query volume</td></tr>
-        <tr><td>Low risk</td><td>Read-heavy services are safer than write-heavy</td><td>Patient reads are 80% of total traffic</td></tr>
+        <tr><td>Fewest inbound dependencies</td><td>Fewer callers = fewer routing changes</td><td>Patient Service (many readers, few writers)</td></tr>
+        <tr><td>Clear data ownership</td><td>Single table cluster = clean extraction</td><td>Patients + Allergies + Vitals = one aggregate</td></tr>
+        <tr><td>Well-defined API surface</td><td>Existing REST endpoints = less design work</td><td><code>/api/v1/patients</code> already exists</td></tr>
+        <tr><td>High business value</td><td>Proves pattern delivers real benefits</td><td>Patient Service = highest query volume</td></tr>
+        <tr><td>Low risk (read-heavy)</td><td>Read-heavy services are safer to extract</td><td>Patient reads = 80% of total traffic</td></tr>
     </table>
-    <div class="highlight blue"><b>Our choice:</b> Patient Service is the first extraction target. It owns 3 tables (patients, allergies, vitals), has the clearest API surface, and is primarily read-heavy. If something goes wrong, we flip the route back to the monolith in 10 seconds.</div>
 
-    <h3>Step 3: Build the New Service (Week 4-8)</h3>
-    <p>Build the Patient microservice alongside the monolith. Both run simultaneously.</p>
+    <h3>Step 3: Build the New Service</h3>
+    <p>Build the microservice alongside the monolith. Both run simultaneously — the facade controls which gets traffic.</p>
     <div class="grid-2">
         <div>
-            <h4 style="margin-bottom:.5rem;">What the new service needs:</h4>
+            <h4 style="margin-bottom:.5rem;">New Service Requirements</h4>
             <ul style="color:var(--muted);font-size:.85rem;padding-left:1.2rem;">
                 <li>ASP.NET Core 8 Web API with its own PostgreSQL database</li>
-                <li>Same API contract as the monolith's patient endpoints</li>
-                <li>Data migrated from monolith's <code>ehrdb.patients</code> table</li>
-                <li>Event publishing to Kafka on every write</li>
-                <li>Health check endpoint for readiness probe</li>
+                <li>Same API contract as the monolith's endpoints</li>
+                <li>Data migrated from monolith's tables</li>
+                <li>Domain event publishing to Kafka on every write</li>
+                <li>Health check + readiness probe endpoints</li>
+                <li>OpenTelemetry instrumentation from day one</li>
             </ul>
         </div>
         <div>
-            <h4 style="margin-bottom:.5rem;">What stays in the monolith:</h4>
+            <h4 style="margin-bottom:.5rem;">Monolith Changes</h4>
             <ul style="color:var(--muted);font-size:.85rem;padding-left:1.2rem;">
-                <li>Everything except patient CRUD</li>
-                <li>The monolith still reads patient data (via API call to new service)</li>
-                <li>Monolith's patient table becomes read-only (stale copy for fallback)</li>
-                <li>If new service is down, monolith serves stale data with a warning</li>
+                <li>All other bounded contexts remain unchanged</li>
+                <li>Monolith reads extracted data via API call to new service</li>
+                <li>Monolith's copy of extracted tables becomes read-only</li>
+                <li>If new service is down, monolith serves stale data + warning header</li>
+                <li>Add <code>X-Data-Source: fallback</code> header for stale responses</li>
             </ul>
         </div>
     </div>
 
-    <h3>Step 4: Dual-Write + Data Sync (Week 6-8)</h3>
-    <p>Before switching traffic, set up dual-write so both databases have the same data:</p>
+    <h3>Step 4: Dual-Write Data Synchronization</h3>
+    <p>Before switching traffic, set up event-driven dual-write so both databases stay in sync. The new service's database is the source of truth; the monolith's copy is updated asynchronously via Kafka.</p>
     <div class="event-flow">
         <span class="box blue">Write request</span><span class="arr">→</span>
         <span class="box green">New Patient Service</span><span class="arr">→</span>
@@ -156,21 +155,45 @@ spec:
         <span class="box red">Sync consumer</span><span class="arr">→</span>
         <span class="box red">monolith ehrdb (secondary)</span>
     </div>
-    <div class="highlight orange"><b>Critical:</b> During dual-write, the new service's database is the source of truth. The monolith's copy is updated asynchronously via Kafka events. This means there's a brief window (RPO) where the monolith's copy lags behind. For patient reads, this is acceptable — it's only stale by seconds.</div>
+    <div class="code">// Kafka event published on every Patient write
+public record PatientChangedEvent(
+    string EventType,       // "Created" | "Updated" | "Deleted"
+    int PatientId,
+    PatientDto Snapshot,    // Full current state
+    DateTime OccurredAt,
+    string CorrelationId    // Links to originating request trace
+);
 
-    <h3>Step 5: Traffic Shift — Canary (Week 9)</h3>
-    <p>Use Istio VirtualService or APIM to gradually shift traffic from monolith to the new service:</p>
+// Sync consumer in monolith updates its read-only copy
+public class PatientSyncConsumer : IHostedService
+{
+    public async Task ProcessAsync(PatientChangedEvent evt)
+    {
+        switch (evt.EventType)
+        {
+            case "Created":
+            case "Updated":
+                await _monolithDb.UpsertPatientReadCopy(evt.Snapshot);
+                break;
+            case "Deleted":
+                await _monolithDb.MarkPatientInactive(evt.PatientId);
+                break;
+        }
+    }
+}</div>
+    <div class="highlight orange"><b>Consistency window:</b> During dual-write, the monolith's copy lags behind by the Kafka consumer lag (typically &lt; 2 seconds). For patient reads this is acceptable. For safety-critical writes (prescriptions referencing allergies), the microservice is always the authoritative source.</div>
+
+    <h3>Step 5: Canary Traffic Shift</h3>
+    <p>Use Istio VirtualService to gradually shift traffic from monolith to the new service:</p>
     <table>
-        <tr><th>Day</th><th>New Service</th><th>Monolith</th><th>Validation</th></tr>
-        <tr><td>Day 1</td><td>5%</td><td>95%</td><td>Monitor error rate, latency p99. Compare response bodies.</td></tr>
-        <tr><td>Day 2</td><td>25%</td><td>75%</td><td>Run synthetic transactions. Verify data consistency.</td></tr>
-        <tr><td>Day 3</td><td>50%</td><td>50%</td><td>Load test at full scale. Check database connection pool.</td></tr>
-        <tr><td>Day 5</td><td>90%</td><td>10%</td><td>Shadow compare remaining 10%. Fix any discrepancies.</td></tr>
-        <tr><td>Day 7</td><td>100%</td><td>0%</td><td>All patient traffic goes to new service. Keep monolith endpoint alive for 2 weeks as fallback.</td></tr>
+        <tr><th>Stage</th><th>New Service</th><th>Monolith</th><th>Validation Gate</th></tr>
+        <tr><td><b>Canary</b></td><td>5%</td><td>95%</td><td>Error rate &lt; 0.1%, latency p99 within 2x of monolith, response body diff = 0</td></tr>
+        <tr><td><b>Partial</b></td><td>25%</td><td>75%</td><td>Synthetic transactions pass, data consistency check on all writes</td></tr>
+        <tr><td><b>Split</b></td><td>50%</td><td>50%</td><td>Load test at projected peak, connection pool utilization &lt; 80%</td></tr>
+        <tr><td><b>Majority</b></td><td>90%</td><td>10%</td><td>Shadow-compare remaining 10%, fix any divergence</td></tr>
+        <tr><td><b>Full cutover</b></td><td>100%</td><td>0%</td><td>Keep monolith endpoint alive as fallback; dual-write continues</td></tr>
     </table>
-    <div class="code">
-# Istio VirtualService for canary routing
-apiVersion: networking.istio.io/v1
+    <div class="code">apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: patient-canary
@@ -179,134 +202,210 @@ spec:
   http:
     - route:
         - destination:
-            host: patient-service-v2    # New microservice
+            host: patient-service-v2  # New microservice
           weight: 50
         - destination:
-            host: ehr-monolith          # Legacy monolith
+            host: ehr-monolith        # Legacy monolith
           weight: 50
-    </div>
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: patient-service-v2
+          weight: 100                 # Force canary for test traffic</div>
 
-    <h3>Step 6: Decommission Monolith Slice (Week 10)</h3>
-    <p>Once 100% of patient traffic is on the new service for 2 weeks with zero issues:</p>
+    <h3>Step 6: Decommission Monolith Slice</h3>
+    <p>After full cutover with zero issues over the validation period:</p>
     <ol style="color:var(--muted);font-size:.85rem;padding-left:1.5rem;">
-        <li>Stop the dual-write sync consumer</li>
-        <li>Drop the patients/allergies/vitals tables from the monolith's ehrdb</li>
-        <li>Remove patient controller code from the monolith</li>
+        <li>Stop the dual-write Kafka sync consumer</li>
+        <li>Drop the extracted tables from the monolith's <code>ehrdb</code></li>
+        <li>Remove the extracted controller code from the monolith codebase</li>
+        <li>Archive the monolith's read-only copy as a backup</li>
         <li>The monolith is now smaller — one bounded context extracted</li>
     </ol>
+    <div class="highlight red"><b>Point of no return:</b> Only drop the monolith tables after verifying: (1) zero traffic to monolith endpoint for this context, (2) all downstream consumers use the new service, (3) dual-write consumer has been idle for the full validation period. Keep a <code>pg_dump</code> of the dropped tables for 90 days.</div>
 </div>
 
-<!-- Migration Sequence -->
+<!-- Extraction Sequence -->
 <div class="card">
-    <h2>Full Migration Sequence — 6 Bounded Contexts</h2>
-    <p>Each extraction follows the same 5-step pattern. Here's the recommended order:</p>
-    <div class="timeline">
-        <div class="timeline-item active">
-            <h4><span style="color:var(--accent);">Phase 1:</span> Patient Management (Month 1-2)</h4>
-            <p>3 tables (patients, allergies, vitals). Read-heavy, clear boundaries. Proves the pattern works. <b>Monolith shrinks from 8 to 5 tables.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:17%;background:var(--accent);"></div></div>
-        </div>
-        <div class="timeline-item">
-            <h4><span style="color:var(--green);">Phase 2:</span> Provider Management (Month 3)</h4>
-            <p>1 table (providers). Simple extraction — providers are reference data with low write volume. <b>Monolith: 4 tables.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:33%;background:var(--green);"></div></div>
-        </div>
-        <div class="timeline-item">
-            <h4><span style="color:var(--orange);">Phase 3:</span> Scheduling (Month 4-5)</h4>
-            <p>1 table (appointments). Depends on Patient and Provider references — consumes their events via anti-corruption layer. <b>Monolith: 3 tables.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:50%;background:var(--orange);"></div></div>
-        </div>
-        <div class="timeline-item">
-            <h4><span style="color:var(--purple);">Phase 4:</span> Clinical Encounters (Month 6-7)</h4>
-            <p>1 table (medical_records). Most complex extraction — encounters reference patients, providers, prescriptions, and labs. Use ACL to resolve cross-references. <b>Monolith: 2 tables.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:67%;background:var(--purple);"></div></div>
-        </div>
-        <div class="timeline-item">
-            <h4><span style="color:var(--red);">Phase 5:</span> Pharmacy (Month 8)</h4>
-            <p>1 table (prescriptions). Drug interaction checks call Patient Service for allergies — a well-defined API boundary. <b>Monolith: 1 table.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:83%;background:var(--red);"></div></div>
-        </div>
-        <div class="timeline-item">
-            <h4><span style="color:var(--teal);">Phase 6:</span> Laboratory (Month 9-10)</h4>
-            <p>1 table (lab_results). Final extraction. After this, the monolith has zero tables and can be decommissioned. <b>Monolith: gone.</b></p>
-            <div class="pct-bar"><div class="pct-fill" style="width:100%;background:var(--teal);"></div></div>
-        </div>
-    </div>
+    <h2>Extraction Sequence — 6 Bounded Contexts</h2>
+    <p>Each extraction follows the same 6-step pattern above. Order is determined by dependency graph — extract leaf nodes (fewest dependencies) first.</p>
+    <table>
+        <tr><th>Order</th><th>Bounded Context</th><th>Tables</th><th>Dependencies</th><th>Complexity</th><th>Monolith After</th></tr>
+        <tr>
+            <td><span style="color:var(--accent);font-weight:700;">1</span></td>
+            <td><b>Patient Management</b></td>
+            <td>patients, allergies, vitals</td>
+            <td>None (leaf node)</td>
+            <td><span style="color:var(--green);">Low</span> — read-heavy, clear aggregate</td>
+            <td>8 → 5 tables</td>
+        </tr>
+        <tr>
+            <td><span style="color:var(--green);font-weight:700;">2</span></td>
+            <td><b>Provider Management</b></td>
+            <td>providers</td>
+            <td>None (reference data)</td>
+            <td><span style="color:var(--green);">Low</span> — simple CRUD, low write volume</td>
+            <td>5 → 4 tables</td>
+        </tr>
+        <tr>
+            <td><span style="color:var(--orange);font-weight:700;">3</span></td>
+            <td><b>Scheduling</b></td>
+            <td>appointments</td>
+            <td>Patient (read), Provider (read)</td>
+            <td><span style="color:var(--orange);">Medium</span> — cross-context reads via ACL</td>
+            <td>4 → 3 tables</td>
+        </tr>
+        <tr>
+            <td><span style="color:var(--purple);font-weight:700;">4</span></td>
+            <td><b>Clinical Encounters</b></td>
+            <td>medical_records</td>
+            <td>Patient, Provider, Pharmacy, Lab</td>
+            <td><span style="color:var(--red);">High</span> — most cross-references, needs ACL for 4 contexts</td>
+            <td>3 → 2 tables</td>
+        </tr>
+        <tr>
+            <td><span style="color:var(--red);font-weight:700;">5</span></td>
+            <td><b>Pharmacy</b></td>
+            <td>prescriptions</td>
+            <td>Patient (allergies for drug interaction check)</td>
+            <td><span style="color:var(--orange);">Medium</span> — safety-critical allergy lookup</td>
+            <td>2 → 1 table</td>
+        </tr>
+        <tr>
+            <td><span style="color:var(--teal);font-weight:700;">6</span></td>
+            <td><b>Laboratory</b></td>
+            <td>lab_results</td>
+            <td>Patient (read), Provider (read)</td>
+            <td><span style="color:var(--orange);">Medium</span> — final extraction, monolith decommissioned</td>
+            <td>1 → 0 (done)</td>
+        </tr>
+    </table>
+    <div class="highlight"><b>Dependency rule:</b> A service can only be extracted after all services it depends on are already extracted (or have stable APIs in the monolith). Patient and Provider are leaf nodes — extract them first. Clinical Encounters has the most dependencies — extract it last among non-leaf nodes.</div>
 </div>
 
 <!-- Anti-Corruption Layer -->
 <div class="card">
     <h2>Anti-Corruption Layer (ACL)</h2>
-    <p>When a new microservice needs data from the monolith (or vice versa), don't let the monolith's data model leak into the new service. Use an Anti-Corruption Layer — a translation boundary that converts between the two models.</p>
+    <p>When a microservice needs data from another service (or the monolith during transition), the external model must not leak into the consuming service's domain. The ACL is a translation boundary — an adapter that converts external DTOs into the consuming service's domain objects.</p>
 
-    <h3>Example: Clinical Service Needs Patient Data</h3>
-    <div class="code">
-// Anti-Corruption Layer in Clinical Service
-// Translates monolith's patient model to clinical service's domain model
+    <h3>Why ACL Is Required</h3>
+    <table>
+        <tr><th>Without ACL</th><th>With ACL</th></tr>
+        <tr><td>Clinical service imports <code>PatientDto</code> with 30 fields</td><td>Clinical service defines <code>ClinicalPatient</code> with 4 fields it actually needs</td></tr>
+        <tr><td>Patient Service adds a field → clinical service breaks</td><td>Patient Service changes model → only the ACL adapter is updated</td></tr>
+        <tr><td>Clinical database stores redundant insurance, address, phone data</td><td>Clinical database stores only <code>PatientId</code>, <code>FullName</code>, <code>Allergies</code>, <code>DOB</code></td></tr>
+        <tr><td>Test mocks require full 30-field patient object</td><td>Tests mock <code>IPatientReference</code> with 4-field projection</td></tr>
+    </table>
 
+    <h3>ACL Interface</h3>
+    <div class="code">// Domain interface — clinical service defines what it needs
+public interface IPatientReference
+{
+    Task&lt;ClinicalPatient&gt; GetPatientForEncounter(int patientId);
+    Task&lt;IReadOnlyList&lt;AllergyFlag&gt;&gt; GetActiveAllergies(int patientId);
+}
+
+// Domain model — only fields clinical service cares about
+public record ClinicalPatient(
+    int PatientId,
+    string FullName,
+    IReadOnlyList&lt;AllergyFlag&gt; ActiveAllergies,
+    DateTime DateOfBirth
+);
+
+public record AllergyFlag(string Allergen, string Severity);</div>
+
+    <h3>ACL Implementation — HTTP Adapter</h3>
+    <div class="code">// Infrastructure layer: translates Patient Service API → clinical domain model
 public class PatientAclClient : IPatientReference
 {
-    private readonly HttpClient _http;  // Calls Patient Service REST API
+    private readonly HttpClient _http;
+
+    public PatientAclClient(HttpClient http) =&gt; _http = http;
 
     public async Task&lt;ClinicalPatient&gt; GetPatientForEncounter(int patientId)
     {
-        // Call new Patient Service (or monolith during transition)
+        // Call Patient Service REST API
         var response = await _http.GetAsync($"/api/v1/patients/{patientId}");
+        response.EnsureSuccessStatusCode();
         var dto = await response.Content.ReadFromJsonAsync&lt;PatientDto&gt;();
 
-        // Translate external model to clinical domain model
-        // Only take what clinical service needs — not the entire patient
-        return new ClinicalPatient
-        {
-            PatientId = dto.PatientId,
-            FullName = $"{dto.FirstName} {dto.LastName}",
-            ActiveAllergies = dto.Allergies
+        // Translate: external model → clinical domain model
+        return new ClinicalPatient(
+            PatientId: dto!.PatientId,
+            FullName: $"{dto.FirstName} {dto.LastName}",
+            ActiveAllergies: dto.Allergies
                 .Where(a =&gt; a.IsActive)
                 .Select(a =&gt; new AllergyFlag(a.Allergen, a.Severity))
                 .ToList(),
-            DateOfBirth = dto.DateOfBirth
-            // Note: we don't import insurance info — clinical doesn't need it
-        };
+            DateOfBirth: dto.DateOfBirth
+            // Insurance, address, phone — deliberately excluded
+        );
+    }
+
+    public async Task&lt;IReadOnlyList&lt;AllergyFlag&gt;&gt; GetActiveAllergies(int patientId)
+    {
+        var patient = await GetPatientForEncounter(patientId);
+        return patient.ActiveAllergies;
     }
 }
-    </div>
-    <div class="highlight purple"><b>Key principle:</b> Each microservice owns its own view of external data. The clinical service doesn't store a copy of the patient record — it stores a <code>ClinicalPatient</code> projection with only the fields it needs. If the Patient Service changes its model, only the ACL adapter changes.</div>
+
+// DI registration with resilience
+builder.Services.AddHttpClient&lt;PatientAclClient&gt;(c =&gt;
+    c.BaseAddress = new Uri("https://patient-service.ehr-core.svc.cluster.local:8080"))
+    .AddTransientHttpErrorPolicy(p =&gt;
+        p.WaitAndRetryAsync(3, attempt =&gt; TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt))));</div>
+
+    <h3>ACL Per Bounded Context</h3>
+    <table>
+        <tr><th>Consumer Service</th><th>Needs From</th><th>ACL Projection</th><th>Fields Used</th></tr>
+        <tr><td>Clinical Encounters</td><td>Patient Service</td><td><code>ClinicalPatient</code></td><td>PatientId, FullName, ActiveAllergies, DOB</td></tr>
+        <tr><td>Pharmacy</td><td>Patient Service</td><td><code>PrescriptionPatient</code></td><td>PatientId, FullName, ActiveAllergies, Weight, Age</td></tr>
+        <tr><td>Scheduling</td><td>Patient Service</td><td><code>SchedulingPatient</code></td><td>PatientId, FullName, Phone, PreferredLanguage</td></tr>
+        <tr><td>Scheduling</td><td>Provider Service</td><td><code>SchedulingProvider</code></td><td>ProviderId, FullName, Specialty, AvailableSlots</td></tr>
+        <tr><td>Laboratory</td><td>Patient Service</td><td><code>LabPatient</code></td><td>PatientId, FullName, DOB, BloodType</td></tr>
+        <tr><td>Laboratory</td><td>Provider Service</td><td><code>OrderingProvider</code></td><td>ProviderId, FullName, NPI</td></tr>
+    </table>
+    <div class="highlight purple"><b>Key principle:</b> Each microservice owns its own projection of external data. Pharmacy needs allergies + weight for drug interaction checks. Scheduling needs phone number for reminders. Neither service stores the full patient record — only the fields it needs via its own ACL.</div>
 </div>
 
 <!-- Risks and Mitigations -->
 <div class="card">
-    <h2>Risks and How to Mitigate Them</h2>
+    <h2>Risks and Mitigations</h2>
     <table>
         <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
-        <tr><td>Data inconsistency during dual-write</td><td>Monolith and microservice return different data for same patient</td><td>Shadow comparison: run both and diff responses for 100% of traffic. Alert on any divergence.</td></tr>
-        <tr><td>Performance regression (network hop)</td><td>Monolith's in-process call becomes HTTP call (1-5ms latency)</td><td>Pre-measure: instrument current in-process call latency. Set budget: new service must be within 2x of original.</td></tr>
-        <tr><td>Team doesn't finish migration (stuck at 50%)</td><td>Half-monolith/half-microservice = worst of both worlds</td><td>Time-box each phase to 2 months. If a phase takes longer, it's a sign you sliced too big — split it.</td></tr>
-        <tr><td>Rollback needed after cutover</td><td>Users on new service, data in new DB, can't go back</td><td>Keep dual-write running for 2 weeks after 100% cutover. Monolith can serve stale reads as fallback.</td></tr>
-        <tr><td>Cross-context transactions</td><td>Monolith uses DB transactions across tables; microservices can't</td><td>Replace with saga pattern: distributed workflow with compensation. Accept eventual consistency.</td></tr>
+        <tr><td><b>Data divergence during dual-write</b></td><td>Monolith and microservice return different data for same query</td><td>Shadow comparison: run both paths and diff 100% of responses. Alert on any divergence &gt; 0.</td></tr>
+        <tr><td><b>Latency regression</b></td><td>In-process call → HTTP call adds 1-5ms per hop</td><td>Baseline before migration. Set latency budget: new service p99 must be &lt; 2x original.</td></tr>
+        <tr><td><b>Stalled migration (stuck at 50%)</b></td><td>Half-monolith / half-microservice = worst of both worlds</td><td>Set a go/no-go checkpoint per context. If extraction stalls, the bounded context is too large — split it.</td></tr>
+        <tr><td><b>Rollback after cutover</b></td><td>Data in new DB, can't revert traffic</td><td>Keep dual-write running after 100% cutover. Monolith can serve stale reads as immediate fallback.</td></tr>
+        <tr><td><b>Cross-context transactions</b></td><td>Monolith uses DB transactions spanning multiple tables</td><td>Replace with saga pattern: distributed workflow with compensating actions. Accept eventual consistency.</td></tr>
+        <tr><td><b>ACL proliferation</b></td><td>Too many ACL adapters, each with different caching/retry logic</td><td>Shared <code>ServiceClientBase&lt;T&gt;</code> with standard Polly policies. Each ACL only defines the model mapping.</td></tr>
     </table>
 </div>
 
 <!-- Current State -->
 <div class="card">
-    <h2>Where We Are Now</h2>
+    <h2>Current Architecture State</h2>
     <div class="grid-3">
         <div class="phase-card" style="border-color:var(--green);">
             <span class="phase-num p2">DONE</span>
             <h4>Facade Installed</h4>
-            <p>NGINX Ingress Controller running at <code>20.175.132.82</code>. APIM routing in architecture design. All traffic goes through ingress.</p>
+            <p>NGINX Ingress Controller running at <code>20.175.132.82</code>. All external traffic routes through ingress. APIM integration designed.</p>
         </div>
         <div class="phase-card" style="border-color:var(--green);">
             <span class="phase-num p2">DONE</span>
             <h4>Monolith Running</h4>
-            <p>EHR API (v3) deployed as monolith with all 8 tables in <code>ehrdb</code>. Serving all 6 bounded contexts from single deployment.</p>
+            <p>EHR API (v3) deployed with all 8 tables in <code>ehrdb</code>. Serving all 6 bounded contexts from a single deployment.</p>
         </div>
         <div class="phase-card" style="border-color:var(--accent);">
             <span class="phase-num p1">NEXT</span>
             <h4>Extract Patient Service</h4>
-            <p>First microservice extraction. Create <code>patient-db</code>, build Patient Service, set up dual-write, canary deploy.</p>
+            <p>First extraction target. Create <code>patient-db</code>, build Patient Service, set up dual-write, canary deploy via Istio VirtualService.</p>
         </div>
     </div>
-    <div class="highlight"><b>Timeline:</b> With 6 bounded contexts and ~2 months per extraction, full migration takes approximately 10-12 months. The monolith shrinks with each phase, and clinical staff see improvements incrementally — not as one risky cutover.</div>
 </div>
 
 </div>
