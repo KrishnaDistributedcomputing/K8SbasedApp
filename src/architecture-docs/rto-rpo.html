@@ -200,46 +200,138 @@ code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83re
 <!-- Azure Implementation -->
 <div class="card">
     <h2>Azure Implementation Details</h2>
-    <h3>PostgreSQL HA Configuration (Tier 0)</h3>
-    <div class="code">
-# Enable zone-redundant HA for patient-db (Tier 0)
+    <p>Concrete Azure CLI commands and Kubernetes manifests for each tier's recovery strategy.</p>
+    <table>
+        <tr><th>Component</th><th>Tier</th><th>Azure Service</th><th>HA Mode</th><th>Backup Retention</th><th>Recovery Method</th></tr>
+        <tr>
+            <td><b>patient-db</b></td>
+            <td><span class="tier critical">Tier 0</span></td>
+            <td>PostgreSQL Flexible Server</td>
+            <td>Zone-Redundant (AZ 1 + AZ 2)</td>
+            <td>35 days</td>
+            <td>Auto-failover &lt; 30s + continuous WAL</td>
+        </tr>
+        <tr>
+            <td><b>clinical-db</b></td>
+            <td><span class="tier high">Tier 1</span></td>
+            <td>PostgreSQL Flexible Server</td>
+            <td>Same-Zone HA</td>
+            <td>14 days</td>
+            <td>PITR (5-min granularity)</td>
+        </tr>
+        <tr>
+            <td><b>scheduling-db</b></td>
+            <td><span class="tier medium">Tier 2</span></td>
+            <td>PostgreSQL Flexible Server</td>
+            <td>None (single instance)</td>
+            <td>7 days</td>
+            <td>Restore from automated backup</td>
+        </tr>
+        <tr>
+            <td><b>audit-db</b></td>
+            <td><span class="tier low">Tier 3</span></td>
+            <td>PostgreSQL Flexible Server</td>
+            <td>None (single instance)</td>
+            <td>7 days</td>
+            <td>Kafka event replay (full rebuild)</td>
+        </tr>
+        <tr>
+            <td><b>patient-service</b></td>
+            <td><span class="tier critical">Tier 0</span></td>
+            <td>AKS (3 replicas, 3 AZs)</td>
+            <td>PDB minAvailable: 2</td>
+            <td>—</td>
+            <td>Pod auto-restart + topology spread</td>
+        </tr>
+        <tr>
+            <td><b>clinical-service</b></td>
+            <td><span class="tier high">Tier 1</span></td>
+            <td>AKS (2 replicas, anti-affinity)</td>
+            <td>PDB minAvailable: 1</td>
+            <td>—</td>
+            <td>Pod auto-restart + node spread</td>
+        </tr>
+        <tr>
+            <td><b>audit-service</b></td>
+            <td><span class="tier low">Tier 3</span></td>
+            <td>AKS (1 replica, spot OK)</td>
+            <td>None</td>
+            <td>—</td>
+            <td>Kafka consumer offset reset</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>PostgreSQL HA Configuration (Tier 0)</h2>
+    <p>Zone-redundant high availability keeps a synchronous standby in a separate availability zone. Azure manages automatic failover — no application changes required.</p>
+    <div class="grid-2">
+        <div>
+            <h3>Enable Zone-Redundant HA</h3>
+            <div class="code"># Enable zone-redundant HA for patient-db
 az postgres flexible-server update \
   --resource-group rg-aks-store-demo \
   --name patient-db-canadacentral \
   --high-availability ZoneRedundant \
-  --standby-availability-zone 2
-
-# Verify HA status
-az postgres flexible-server show \
-  --name patient-db-canadacentral \
-  --query "{HA: highAvailability.mode, State: highAvailability.state, StandbyAZ: highAvailability.standbyAvailabilityZone}"
-
-# Configure backup retention (35 days for Tier 0)
+  --standby-availability-zone 2</div>
+            <h3>Configure Backup Retention</h3>
+            <div class="code"># 35-day retention for Tier 0 (default is 7)
 az postgres flexible-server update \
+  --resource-group rg-aks-store-demo \
   --name patient-db-canadacentral \
-  --backup-retention 35
+  --backup-retention 35</div>
+        </div>
+        <div>
+            <h3>Verify HA Status</h3>
+            <div class="code"># Check HA mode, state, and standby AZ
+az postgres flexible-server show \
+  --resource-group rg-aks-store-demo \
+  --name patient-db-canadacentral \
+  --query "{
+    HA: highAvailability.mode,
+    State: highAvailability.state,
+    StandbyAZ: highAvailability.standbyAvailabilityZone,
+    BackupRetention: backup.backupRetentionDays,
+    GeoRedundant: backup.geoRedundantBackup
+  }" -o table</div>
+            <h3>Forced Failover (DR Test)</h3>
+            <div class="code"># Trigger manual failover to standby
+# Use during quarterly DR rehearsals
+az postgres flexible-server restart \
+  --resource-group rg-aks-store-demo \
+  --name patient-db-canadacentral \
+  --failover Forced</div>
+        </div>
     </div>
+    <div class="highlight"><b>Cost impact:</b> Zone-redundant HA doubles the compute cost (standby runs continuously). For <code>Standard_B2s</code> in Canada Central: ~$52/month single → ~$104/month with HA. Storage and backup costs remain the same.</div>
+</div>
 
-    <h3>AKS PodDisruptionBudget (Tier 0)</h3>
-    <div class="code">
-apiVersion: policy/v1
+<div class="card">
+    <h2>AKS PodDisruptionBudget (Tier 0)</h2>
+    <p>PDB prevents Kubernetes from evicting too many pods during voluntary disruptions (node drain, cluster upgrade, spot eviction). Combined with <code>topologySpreadConstraints</code>, pods are distributed across availability zones.</p>
+    <div class="grid-2">
+        <div>
+            <h3>PodDisruptionBudget</h3>
+            <div class="code">apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: patient-service-pdb
   namespace: ehr-core
 spec:
-  minAvailable: 2          # Always keep 2 of 3 pods running
+  minAvailable: 2        # 2 of 3 pods must stay up
   selector:
     matchLabels:
-      app: patient-service
----
-apiVersion: apps/v1
+      app: patient-service</div>
+        </div>
+        <div>
+            <h3>Deployment with AZ Spread</h3>
+            <div class="code">apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: patient-service
   namespace: ehr-core
 spec:
-  replicas: 3               # 3 replicas across 3 AZs
+  replicas: 3             # One per AZ
   template:
     spec:
       topologySpreadConstraints:
@@ -249,24 +341,61 @@ spec:
           labelSelector:
             matchLabels:
               app: patient-service
-      priorityClassName: system-cluster-critical
+      priorityClassName: system-cluster-critical</div>
+        </div>
     </div>
+    <table>
+        <tr><th>Setting</th><th>Value</th><th>Effect</th></tr>
+        <tr><td><code>minAvailable: 2</code></td><td>PDB</td><td>Kubernetes refuses to evict a pod if it would leave fewer than 2 running</td></tr>
+        <tr><td><code>maxSkew: 1</code></td><td>TopologySpread</td><td>Pods are evenly distributed: max 1 pod difference between any two zones</td></tr>
+        <tr><td><code>DoNotSchedule</code></td><td>TopologySpread</td><td>Hard constraint — scheduler fails rather than clustering pods in one zone</td></tr>
+        <tr><td><code>system-cluster-critical</code></td><td>PriorityClass</td><td>Patient-service pods preempt lower-priority workloads if nodes are full</td></tr>
+    </table>
+</div>
 
-    <h3>Kafka Event Replay for Tier 3 Recovery</h3>
-    <div class="code">
-# Audit service can rebuild its entire state from Kafka
-# Topic retention: 30 days for audit events
-# Consumer group: audit-service-rebuild
-
-# Reset consumer offset to beginning (full replay)
-kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+<div class="card">
+    <h2>Kafka Event Replay for Tier 3 Recovery</h2>
+    <p>Tier 3 services (audit, reporting) are designed to rebuild their entire state from Kafka events. Instead of restoring a database backup, reset the consumer group offset and replay all events.</p>
+    <div class="grid-2">
+        <div>
+            <h3>Reset Consumer Offset</h3>
+            <div class="code"># Reset offset to beginning (earliest event)
+kafka-consumer-groups.sh \
+  --bootstrap-server kafka:9092 \
   --group audit-service-rebuild \
   --topic ehr.audit.events \
-  --reset-offsets --to-earliest --execute
-
-# Process rate: ~50,000 events/min
-# Full rebuild of 30-day audit log: ~2 hours
+  --reset-offsets --to-earliest \
+  --execute</div>
+            <h3>Reset to Specific Timestamp</h3>
+            <div class="code"># Replay only events after a specific time
+kafka-consumer-groups.sh \
+  --bootstrap-server kafka:9092 \
+  --group audit-service-rebuild \
+  --topic ehr.audit.events \
+  --reset-offsets \
+  --to-datetime 2026-03-22T00:00:00.000 \
+  --execute</div>
+        </div>
+        <div>
+            <h3>Kafka Topic Configuration</h3>
+            <table>
+                <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+                <tr><td><code>retention.ms</code></td><td>2592000000 (30 days)</td><td>Full rebuild window</td></tr>
+                <tr><td><code>min.insync.replicas</code></td><td>2</td><td>No event loss</td></tr>
+                <tr><td><code>replication.factor</code></td><td>3</td><td>Survive 2 broker failures</td></tr>
+                <tr><td><code>cleanup.policy</code></td><td>delete</td><td>Remove events past retention</td></tr>
+            </table>
+            <h3>Rebuild Performance</h3>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>Processing rate</td><td>~50,000 events/min</td></tr>
+                <tr><td>30-day audit volume</td><td>~6M events</td></tr>
+                <tr><td>Full rebuild time</td><td>~2 hours</td></tr>
+                <tr><td>Partial (1-day) rebuild</td><td>~4 minutes</td></tr>
+            </table>
+        </div>
     </div>
+    <div class="highlight green"><b>Why this works for Tier 3:</b> Audit events are immutable and append-only. The audit service is a pure projection — it reads events and builds a queryable view. There's no "state" to back up. The Kafka topic <i>is</i> the source of truth.</div>
 </div>
 
 <!-- Monitoring -->
