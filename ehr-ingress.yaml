@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ehr-ingress
+  namespace: ehr
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: ehr-tls
+  rules:
+    - http:
+        paths:
+          - path: /ehr(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ehr-frontend
+                port:
+                  number: 80
+          - path: /ehr-api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ehr-api
+                port:
+                  number: 80

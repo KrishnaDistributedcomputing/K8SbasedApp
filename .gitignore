@@ -1,0 +1,32 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet
+**/packages/
+*.nupkg
+
+# Logs
+*.log
+
+# Portal downloaded logs
+portal-*/
+api-*/
+*.zip
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Secrets / local config
+appsettings.Development.json
+*.pfx
+*.p12

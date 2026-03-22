@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ehr
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ehr-db-secret
+  namespace: ehr
+type: Opaque
+stringData:
+  connection-string: "Host=ehrdb-canadacentral.postgres.database.azure.com;Database=ehrdb;Username=ehradmin;Password=EhrP@ss2026!Secure;SSL Mode=Require;Trust Server Certificate=true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ehr-api
+  namespace: ehr
+  labels:
+    app: ehr-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ehr-api
+  template:
+    metadata:
+      labels:
+        app: ehr-api
+    spec:
+      containers:
+        - name: ehr-api
+          image: ehracrcanada.azurecr.io/ehr-api:v2
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EHR_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: ehr-db-secret
+                  key: connection-string
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ehr-api
+  namespace: ehr
+spec:
+  selector:
+    app: ehr-api
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ehr-frontend
+  namespace: ehr
+  labels:
+    app: ehr-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ehr-frontend
+  template:
+    metadata:
+      labels:
+        app: ehr-frontend
+    spec:
+      containers:
+        - name: ehr-frontend
+          image: ehracrcanada.azurecr.io/ehr-frontend:v1
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ehr-frontend
+  namespace: ehr
+spec:
+  selector:
+    app: ehr-frontend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

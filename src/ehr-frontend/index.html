@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EHR - Electronic Health Records</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4f8; color: #1a202c; }
+        
+        .header { background: linear-gradient(135deg, #1e3a5f 0%, #2d6a4f 100%); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        .header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .header .logo { font-size: 2rem; }
+        .header .status { font-size: 0.85rem; opacity: 0.85; }
+        .header .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #68d391; margin-right: 4px; }
+        
+        .nav { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 2rem; display: flex; gap: 0; overflow-x: auto; }
+        .nav button { padding: 0.75rem 1.25rem; border: none; background: none; cursor: pointer; font-size: 0.9rem; color: #718096; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; }
+        .nav button:hover { color: #2d6a4f; background: #f0fff4; }
+        .nav button.active { color: #2d6a4f; border-bottom-color: #2d6a4f; font-weight: 600; }
+        
+        .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 1rem; }
+        .stat-card .icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .stat-card .icon.patients { background: #ebf8ff; color: #3182ce; }
+        .stat-card .icon.appointments { background: #f0fff4; color: #38a169; }
+        .stat-card .icon.records { background: #faf5ff; color: #805ad5; }
+        .stat-card .icon.prescriptions { background: #fffaf0; color: #dd6b20; }
+        .stat-card .info h3 { font-size: 1.75rem; line-height: 1; }
+        .stat-card .info p { color: #718096; font-size: 0.85rem; margin-top: 0.25rem; }
+        
+        .content-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+        .content-card .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+        .content-card .card-header h2 { font-size: 1.1rem; }
+        
+        .toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .toolbar input, .toolbar select { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; }
+        .toolbar input { min-width: 200px; }
+        
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: #2d6a4f; color: white; }
+        .btn-primary:hover { background: #1e4d38; }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+        .btn-outline { background: transparent; border: 1px solid #e2e8f0; color: #4a5568; }
+        .btn-outline:hover { background: #f7fafc; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.75rem 1.25rem; background: #f7fafc; color: #718096; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        td { padding: 0.75rem 1.25rem; border-top: 1px solid #edf2f7; font-size: 0.9rem; }
+        tr:hover td { background: #f7fafc; }
+        
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-green { background: #c6f6d5; color: #22543d; }
+        .badge-blue { background: #bee3f8; color: #2a4365; }
+        .badge-yellow { background: #fefcbf; color: #744210; }
+        .badge-red { background: #fed7d7; color: #742a2a; }
+        .badge-gray { background: #e2e8f0; color: #4a5568; }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .modal h2 { margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: #4a5568; margin-bottom: 0.25rem; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; }
+        
+        .patient-detail { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; }
+        .patient-info { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .patient-info h3 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+        .patient-info .meta { color: #718096; font-size: 0.85rem; margin-bottom: 1rem; }
+        .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .info-row .label { color: #718096; }
+        
+        .tabs { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 1rem; }
+        .tabs button { padding: 0.5rem 1rem; border: none; background: none; cursor: pointer; font-size: 0.85rem; color: #718096; border-bottom: 2px solid transparent; }
+        .tabs button.active { color: #2d6a4f; border-bottom-color: #2d6a4f; }
+        
+        .empty { text-align: center; padding: 3rem; color: #a0aec0; }
+        .loading { text-align: center; padding: 2rem; color: #718096; }
+        
+        @media (max-width: 768px) {
+            .patient-detail { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="logo">🏥</span> EHR System</h1>
+        <div class="status"><span class="dot"></span> Connected</div>
+    </div>
+    
+    <div class="nav" id="mainNav">
+        <button class="active" data-section="dashboard">Dashboard</button>
+        <button data-section="patients">Patients</button>
+        <button data-section="appointments">Appointments</button>
+        <button data-section="records">Medical Records</button>
+        <button data-section="prescriptions">Prescriptions</button>
+        <button data-section="labs">Lab Results</button>
+        <button data-section="providers">Providers</button>
+    </div>
+    
+    <div class="main">
+        <!-- Dashboard -->
+        <div class="section active" id="sec-dashboard">
+            <div class="dashboard-grid" id="statsGrid">
+                <div class="stat-card"><div class="icon patients">👥</div><div class="info"><h3 id="statPatients">-</h3><p>Total Patients</p></div></div>
+                <div class="stat-card"><div class="icon appointments">📅</div><div class="info"><h3 id="statAppointments">-</h3><p>Today's Appointments</p></div></div>
+                <div class="stat-card"><div class="icon records">📋</div><div class="info"><h3 id="statRecords">-</h3><p>Medical Records</p></div></div>
+                <div class="stat-card"><div class="icon prescriptions">💊</div><div class="info"><h3 id="statPrescriptions">-</h3><p>Active Prescriptions</p></div></div>
+            </div>
+            <div class="content-card">
+                <div class="card-header"><h2>Recent Appointments</h2></div>
+                <div id="dashAppointments"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Patients -->
+        <div class="section" id="sec-patients">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Patients</h2>
+                    <div class="toolbar">
+                        <input type="text" id="patientSearch" placeholder="Search patients..." oninput="searchPatients()">
+                        <button class="btn btn-primary" onclick="showModal('patientModal')">+ New Patient</button>
+                    </div>
+                </div>
+                <div id="patientsTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Patient Detail -->
+        <div class="section" id="sec-patient-detail">
+            <div style="margin-bottom:1rem"><button class="btn btn-outline" onclick="switchSection('patients')">← Back to Patients</button></div>
+            <div class="patient-detail">
+                <div>
+                    <div class="patient-info" id="patientInfo"></div>
+                </div>
+                <div>
+                    <div class="tabs" id="patientTabs">
+                        <button class="active" data-tab="ptRecords">Records</button>
+                        <button data-tab="ptAppointments">Appointments</button>
+                        <button data-tab="ptPrescriptions">Prescriptions</button>
+                        <button data-tab="ptLabs">Lab Results</button>
+                        <button data-tab="ptVitals">Vitals</button>
+                        <button data-tab="ptAllergies">Allergies</button>
+                    </div>
+                    <div class="content-card" id="patientTabContent"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Appointments -->
+        <div class="section" id="sec-appointments">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Appointments</h2>
+                    <div class="toolbar">
+                        <select id="apptStatusFilter" onchange="loadAppointments()">
+                            <option value="">All Statuses</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="CheckedIn">Checked In</option>
+                            <option value="InProgress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="showModal('appointmentModal')">+ New Appointment</button>
+                    </div>
+                </div>
+                <div id="appointmentsTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Medical Records -->
+        <div class="section" id="sec-records">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Medical Records</h2>
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="showModal('recordModal')">+ New Record</button>
+                    </div>
+                </div>
+                <div id="recordsTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Prescriptions -->
+        <div class="section" id="sec-prescriptions">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Prescriptions</h2>
+                    <div class="toolbar">
+                        <select id="rxStatusFilter" onchange="loadPrescriptions()">
+                            <option value="">All</option>
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="showModal('prescriptionModal')">+ New Prescription</button>
+                    </div>
+                </div>
+                <div id="prescriptionsTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Lab Results -->
+        <div class="section" id="sec-labs">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Lab Results</h2>
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="showModal('labModal')">+ Order Lab</button>
+                    </div>
+                </div>
+                <div id="labsTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+        
+        <!-- Providers -->
+        <div class="section" id="sec-providers">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Providers</h2>
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="showModal('providerModal')">+ New Provider</button>
+                    </div>
+                </div>
+                <div id="providersTable"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Patient Modal -->
+    <div class="modal-overlay" id="patientModal">
+        <div class="modal">
+            <h2>New Patient</h2>
+            <form onsubmit="createPatient(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>First Name *</label><input name="firstName" required></div>
+                    <div class="form-group"><label>Last Name *</label><input name="lastName" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Date of Birth *</label><input type="date" name="dateOfBirth" required></div>
+                    <div class="form-group"><label>Gender *</label><select name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Phone</label><input name="phone"></div>
+                    <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+                </div>
+                <div class="form-group"><label>Address</label><input name="address"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Insurance ID</label><input name="insuranceId"></div>
+                    <div class="form-group"><label>Blood Type</label><select name="bloodType"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Emergency Contact</label><input name="emergencyContactName"></div>
+                    <div class="form-group"><label>Emergency Phone</label><input name="emergencyContactPhone"></div>
+                </div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('patientModal')">Cancel</button><button type="submit" class="btn btn-primary">Create Patient</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Appointment Modal -->
+    <div class="modal-overlay" id="appointmentModal">
+        <div class="modal">
+            <h2>New Appointment</h2>
+            <form onsubmit="createAppointment(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>Patient *</label><select name="patientId" id="apptPatientSelect" required></select></div>
+                    <div class="form-group"><label>Provider *</label><select name="providerId" id="apptProviderSelect" required></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Date & Time *</label><input type="datetime-local" name="scheduledAt" required></div>
+                    <div class="form-group"><label>Duration (min)</label><input type="number" name="durationMinutes" value="30"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Type</label><select name="type"><option>General</option><option>FollowUp</option><option>Emergency</option><option>Specialist</option><option>Lab</option><option>Imaging</option></select></div>
+                    <div class="form-group"><label>Status</label><select name="status"><option>Scheduled</option><option>CheckedIn</option></select></div>
+                </div>
+                <div class="form-group"><label>Reason</label><textarea name="reason"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('appointmentModal')">Cancel</button><button type="submit" class="btn btn-primary">Create Appointment</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Medical Record Modal -->
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal">
+            <h2>New Medical Record</h2>
+            <form onsubmit="createRecord(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>Patient *</label><select name="patientId" id="recPatientSelect" required></select></div>
+                    <div class="form-group"><label>Provider *</label><select name="providerId" id="recProviderSelect" required></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Encounter Date *</label><input type="date" name="encounterDate" required></div>
+                    <div class="form-group"><label>Encounter Type *</label><select name="encounterType"><option>Office Visit</option><option>ER</option><option>Hospitalization</option><option>Telehealth</option></select></div>
+                </div>
+                <div class="form-group"><label>Chief Complaint</label><textarea name="chiefComplaint"></textarea></div>
+                <div class="form-group"><label>Diagnosis</label><textarea name="diagnosis"></textarea></div>
+                <div class="form-group"><label>Diagnosis Code (ICD-10)</label><input name="diagnosisCode"></div>
+                <div class="form-group"><label>Treatment Plan</label><textarea name="treatmentPlan"></textarea></div>
+                <div class="form-group"><label>Clinical Notes</label><textarea name="clinicalNotes"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('recordModal')">Cancel</button><button type="submit" class="btn btn-primary">Create Record</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Prescription Modal -->
+    <div class="modal-overlay" id="prescriptionModal">
+        <div class="modal">
+            <h2>New Prescription</h2>
+            <form onsubmit="createPrescription(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>Patient *</label><select name="patientId" id="rxPatientSelect" required></select></div>
+                    <div class="form-group"><label>Provider *</label><select name="providerId" id="rxProviderSelect" required></select></div>
+                </div>
+                <div class="form-group"><label>Medication Name *</label><input name="medicationName" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Dosage *</label><input name="dosage" required placeholder="e.g. 500mg"></div>
+                    <div class="form-group"><label>Frequency *</label><input name="frequency" required placeholder="e.g. Twice daily"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Route</label><select name="route"><option>Oral</option><option>IV</option><option>Topical</option><option>Injection</option><option>Inhalation</option></select></div>
+                    <div class="form-group"><label>Refills</label><input type="number" name="refills" value="0"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Start Date *</label><input type="date" name="startDate" required></div>
+                    <div class="form-group"><label>End Date</label><input type="date" name="endDate"></div>
+                </div>
+                <div class="form-group"><label>Instructions</label><textarea name="instructions"></textarea></div>
+                <div class="form-group"><label>Pharmacy</label><input name="pharmacy"></div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('prescriptionModal')">Cancel</button><button type="submit" class="btn btn-primary">Create Prescription</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Lab Modal -->
+    <div class="modal-overlay" id="labModal">
+        <div class="modal">
+            <h2>Order Lab Test</h2>
+            <form onsubmit="createLab(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>Patient *</label><select name="patientId" id="labPatientSelect" required></select></div>
+                    <div class="form-group"><label>Ordered By</label><select name="orderedByProviderId" id="labProviderSelect"></select></div>
+                </div>
+                <div class="form-group"><label>Test Name *</label><input name="testName" required placeholder="e.g. Complete Blood Count"></div>
+                <div class="form-group"><label>Test Code (LOINC)</label><input name="testCode"></div>
+                <div class="form-group"><label>Notes</label><textarea name="notes"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('labModal')">Cancel</button><button type="submit" class="btn btn-primary">Order Lab</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Provider Modal -->
+    <div class="modal-overlay" id="providerModal">
+        <div class="modal">
+            <h2>New Provider</h2>
+            <form onsubmit="createProvider(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>First Name *</label><input name="firstName" required></div>
+                    <div class="form-group"><label>Last Name *</label><input name="lastName" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Specialty *</label><input name="specialty" required></div>
+                    <div class="form-group"><label>License Number</label><input name="licenseNumber"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Phone</label><input name="phone"></div>
+                    <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+                </div>
+                <div class="form-group"><label>Department</label><input name="department"></div>
+                <div class="form-actions"><button type="button" class="btn btn-outline" onclick="hideModal('providerModal')">Cancel</button><button type="submit" class="btn btn-primary">Create Provider</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API URL: if EHR_API_URL meta tag is set, use that; otherwise derive from current origin
+        const apiMeta = document.querySelector('meta[name="ehr-api-url"]');
+        const API = apiMeta ? apiMeta.content.replace(/\/$/, '') : window.location.origin.replace(/\/$/, '');
+        let patients = [], providers = [];
+
+        // --- Navigation ---
+        document.getElementById('mainNav').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') switchSection(e.target.dataset.section);
+        });
+
+        function switchSection(name) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+            const sec = document.getElementById('sec-' + name);
+            if (sec) sec.classList.add('active');
+            const btn = document.querySelector(`.nav button[data-section="${name}"]`);
+            if (btn) btn.classList.add('active');
+            
+            const loaders = { dashboard: loadDashboard, patients: loadPatients, appointments: loadAppointments, records: loadRecords, prescriptions: loadPrescriptions, labs: loadLabs, providers: loadProviders };
+            if (loaders[name]) loaders[name]();
+        }
+
+        // --- API Helpers ---
+        async function api(path, opts) {
+            const res = await fetch(API + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+            if (!res.ok) throw new Error(`API error: ${res.status}`);
+            if (res.status === 204) return null;
+            return res.json();
+        }
+        function formData(form) {
+            const fd = new FormData(form);
+            const obj = {};
+            fd.forEach((v, k) => { if (v !== '') obj[k] = v; });
+            return obj;
+        }
+        function showModal(id) { document.getElementById(id).classList.add('show'); populateSelects(); }
+        function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+        function esc(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+        function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; }
+        function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '-'; }
+        function statusBadge(s) {
+            const m = { Scheduled:'blue', CheckedIn:'yellow', InProgress:'yellow', Completed:'green', Cancelled:'gray', Active:'green', Pending:'yellow', OnHold:'yellow', NoShow:'red' };
+            return `<span class="badge badge-${m[s]||'gray'}">${esc(s)}</span>`;
+        }
+
+        async function populateSelects() {
+            if (!patients.length) patients = await api('/api/patients') || [];
+            if (!providers.length) providers = await api('/api/providers') || [];
+            document.querySelectorAll('[id$="PatientSelect"]').forEach(sel => {
+                sel.innerHTML = '<option value="">Select Patient</option>' + patients.map(p => `<option value="${p.id}">${esc(p.lastName)}, ${esc(p.firstName)}</option>`).join('');
+            });
+            document.querySelectorAll('[id$="ProviderSelect"]').forEach(sel => {
+                sel.innerHTML = '<option value="">Select Provider</option>' + providers.map(p => `<option value="${p.id}">Dr. ${esc(p.lastName)} (${esc(p.specialty)})</option>`).join('');
+            });
+        }
+
+        // --- Dashboard ---
+        async function loadDashboard() {
+            try {
+                const [pts, appts, recs, rxs] = await Promise.all([
+                    api('/api/patients'), api('/api/appointments'), api('/api/medicalrecords'), api('/api/prescriptions?status=Active')
+                ]);
+                patients = pts || []; 
+                document.getElementById('statPatients').textContent = pts?.length || 0;
+                document.getElementById('statAppointments').textContent = (appts || []).filter(a => new Date(a.scheduledAt).toDateString() === new Date().toDateString()).length;
+                document.getElementById('statRecords').textContent = recs?.length || 0;
+                document.getElementById('statPrescriptions').textContent = rxs?.length || 0;
+                
+                const recent = (appts || []).slice(0, 5);
+                document.getElementById('dashAppointments').innerHTML = recent.length ? `<table><thead><tr><th>Patient</th><th>Provider</th><th>Date/Time</th><th>Type</th><th>Status</th></tr></thead><tbody>${recent.map(a => `<tr><td>${esc(a.patient?.lastName)}, ${esc(a.patient?.firstName)}</td><td>Dr. ${esc(a.provider?.lastName)}</td><td>${fmtDateTime(a.scheduledAt)}</td><td>${esc(a.type||'-')}</td><td>${statusBadge(a.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No appointments yet</div>';
+            } catch (e) { document.getElementById('dashAppointments').innerHTML = `<div class="empty">Unable to load. Is the API running?</div>`; }
+        }
+
+        // --- Patients ---
+        async function loadPatients() {
+            try {
+                const search = document.getElementById('patientSearch')?.value || '';
+                patients = await api('/api/patients' + (search ? `?search=${encodeURIComponent(search)}` : '')) || [];
+                document.getElementById('patientsTable').innerHTML = patients.length ? `<table><thead><tr><th>Name</th><th>DOB</th><th>Gender</th><th>Phone</th><th>Insurance ID</th><th>Actions</th></tr></thead><tbody>${patients.map(p => `<tr><td><a href="#" onclick="viewPatient(${p.id});return false" style="color:#2d6a4f;text-decoration:none;font-weight:500">${esc(p.lastName)}, ${esc(p.firstName)}</a></td><td>${fmtDate(p.dateOfBirth)}</td><td>${esc(p.gender)}</td><td>${esc(p.phone||'-')}</td><td>${esc(p.insuranceId||'-')}</td><td><button class="btn btn-sm btn-outline" onclick="viewPatient(${p.id})">View</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty">No patients found</div>';
+            } catch (e) { document.getElementById('patientsTable').innerHTML = '<div class="empty">Error loading patients</div>'; }
+        }
+        function searchPatients() { clearTimeout(window._pst); window._pst = setTimeout(loadPatients, 300); }
+        
+        async function createPatient(e) {
+            e.preventDefault();
+            await api('/api/patients', { method: 'POST', body: JSON.stringify(formData(e.target)) });
+            hideModal('patientModal'); e.target.reset(); patients = []; loadPatients();
+        }
+
+        async function viewPatient(id) {
+            const p = await api(`/api/patients/${id}`);
+            if (!p) return;
+            switchSection('patient-detail');
+            document.getElementById('patientInfo').innerHTML = `
+                <h3>${esc(p.firstName)} ${esc(p.lastName)}</h3>
+                <div class="meta">${esc(p.gender)} · Born ${fmtDate(p.dateOfBirth)}</div>
+                <div class="info-row"><span class="label">Phone</span><span>${esc(p.phone||'-')}</span></div>
+                <div class="info-row"><span class="label">Email</span><span>${esc(p.email||'-')}</span></div>
+                <div class="info-row"><span class="label">Address</span><span>${esc(p.address||'-')}</span></div>
+                <div class="info-row"><span class="label">Insurance</span><span>${esc(p.insuranceId||'-')}</span></div>
+                <div class="info-row"><span class="label">Blood Type</span><span>${esc(p.bloodType||'-')}</span></div>
+                <div class="info-row"><span class="label">Emergency</span><span>${esc(p.emergencyContactName||'-')} ${esc(p.emergencyContactPhone||'')}</span></div>
+                ${(p.allergies||[]).length ? '<div style="margin-top:1rem"><strong style="color:#e53e3e">⚠ Allergies</strong>' + (p.allergies||[]).map(a => `<div style="padding:0.25rem 0;font-size:0.85rem">${esc(a.allergen)} <span class="badge badge-${a.severity==='Life-Threatening'||a.severity==='Severe'?'red':'yellow'}">${esc(a.severity)}</span></div>`).join('') + '</div>' : ''}
+            `;
+            loadPatientTab(id, 'ptRecords');
+            document.getElementById('patientTabs').onclick = e => { if (e.target.tagName === 'BUTTON') { document.querySelectorAll('#patientTabs button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); loadPatientTab(id, e.target.dataset.tab); }};
+        }
+
+        async function loadPatientTab(pid, tab) {
+            const el = document.getElementById('patientTabContent');
+            try {
+                if (tab === 'ptRecords') {
+                    const recs = await api(`/api/medicalrecords?patientId=${pid}`);
+                    el.innerHTML = recs?.length ? `<table><thead><tr><th>Date</th><th>Type</th><th>Diagnosis</th><th>Provider</th></tr></thead><tbody>${recs.map(r => `<tr><td>${fmtDate(r.encounterDate)}</td><td>${esc(r.encounterType)}</td><td>${esc(r.diagnosis||'-')}</td><td>Dr. ${esc(r.provider?.lastName||'-')}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No records</div>';
+                } else if (tab === 'ptAppointments') {
+                    const appts = await api(`/api/appointments?patientId=${pid}`);
+                    el.innerHTML = appts?.length ? `<table><thead><tr><th>Date</th><th>Provider</th><th>Type</th><th>Status</th></tr></thead><tbody>${appts.map(a => `<tr><td>${fmtDateTime(a.scheduledAt)}</td><td>Dr. ${esc(a.provider?.lastName||'-')}</td><td>${esc(a.type||'-')}</td><td>${statusBadge(a.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No appointments</div>';
+                } else if (tab === 'ptPrescriptions') {
+                    const rxs = await api(`/api/prescriptions?patientId=${pid}`);
+                    el.innerHTML = rxs?.length ? `<table><thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Status</th></tr></thead><tbody>${rxs.map(r => `<tr><td>${esc(r.medicationName)}</td><td>${esc(r.dosage)}</td><td>${esc(r.frequency)}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No prescriptions</div>';
+                } else if (tab === 'ptLabs') {
+                    const labs = await api(`/api/labresults?patientId=${pid}`);
+                    el.innerHTML = labs?.length ? `<table><thead><tr><th>Test</th><th>Result</th><th>Flag</th><th>Status</th><th>Date</th></tr></thead><tbody>${labs.map(l => `<tr><td>${esc(l.testName)}</td><td>${esc(l.result||'-')} ${esc(l.unit||'')}</td><td>${l.flag ? statusBadge(l.flag) : '-'}</td><td>${statusBadge(l.status)}</td><td>${fmtDate(l.orderedAt)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No lab results</div>';
+                } else if (tab === 'ptVitals') {
+                    const vitals = await api(`/api/vitals?patientId=${pid}`);
+                    el.innerHTML = vitals?.length ? `<table><thead><tr><th>Date</th><th>Temp</th><th>HR</th><th>BP</th><th>SpO2</th><th>Weight</th></tr></thead><tbody>${vitals.map(v => `<tr><td>${fmtDateTime(v.recordedAt)}</td><td>${v.temperature||'-'}°F</td><td>${v.heartRate||'-'} bpm</td><td>${v.systolicBp||'-'}/${v.diastolicBp||'-'}</td><td>${v.oxygenSaturation||'-'}%</td><td>${v.weight||'-'} lbs</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No vitals recorded</div>';
+                } else if (tab === 'ptAllergies') {
+                    const allergies = await api(`/api/allergies?patientId=${pid}`);
+                    el.innerHTML = allergies?.length ? `<table><thead><tr><th>Allergen</th><th>Type</th><th>Severity</th><th>Reaction</th></tr></thead><tbody>${allergies.map(a => `<tr><td>${esc(a.allergen)}</td><td>${esc(a.allergyType)}</td><td>${statusBadge(a.severity||'Unknown')}</td><td>${esc(a.reaction||'-')}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No allergies recorded</div>';
+                }
+            } catch { el.innerHTML = '<div class="empty">Error loading data</div>'; }
+        }
+
+        // --- Appointments ---
+        async function loadAppointments() {
+            try {
+                const status = document.getElementById('apptStatusFilter')?.value || '';
+                const appts = await api('/api/appointments' + (status ? `?status=${status}` : ''));
+                document.getElementById('appointmentsTable').innerHTML = appts?.length ? `<table><thead><tr><th>Patient</th><th>Provider</th><th>Date/Time</th><th>Type</th><th>Reason</th><th>Status</th></tr></thead><tbody>${appts.map(a => `<tr><td>${esc(a.patient?.lastName)}, ${esc(a.patient?.firstName)}</td><td>Dr. ${esc(a.provider?.lastName)}</td><td>${fmtDateTime(a.scheduledAt)}</td><td>${esc(a.type||'-')}</td><td>${esc(a.reason||'-')}</td><td>${statusBadge(a.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No appointments</div>';
+            } catch { document.getElementById('appointmentsTable').innerHTML = '<div class="empty">Error loading</div>'; }
+        }
+        async function createAppointment(e) {
+            e.preventDefault(); const d = formData(e.target);
+            d.patientId = parseInt(d.patientId); d.providerId = parseInt(d.providerId); d.durationMinutes = parseInt(d.durationMinutes||30);
+            await api('/api/appointments', { method: 'POST', body: JSON.stringify(d) });
+            hideModal('appointmentModal'); e.target.reset(); loadAppointments();
+        }
+
+        // --- Records ---
+        async function loadRecords() {
+            try {
+                const recs = await api('/api/medicalrecords');
+                document.getElementById('recordsTable').innerHTML = recs?.length ? `<table><thead><tr><th>Date</th><th>Patient</th><th>Provider</th><th>Type</th><th>Diagnosis</th></tr></thead><tbody>${recs.map(r => `<tr><td>${fmtDate(r.encounterDate)}</td><td>${esc(r.patient?.lastName)}, ${esc(r.patient?.firstName)}</td><td>Dr. ${esc(r.provider?.lastName)}</td><td>${esc(r.encounterType)}</td><td>${esc(r.diagnosis||'-')}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No records</div>';
+            } catch { document.getElementById('recordsTable').innerHTML = '<div class="empty">Error loading</div>'; }
+        }
+        async function createRecord(e) {
+            e.preventDefault(); const d = formData(e.target);
+            d.patientId = parseInt(d.patientId); d.providerId = parseInt(d.providerId);
+            await api('/api/medicalrecords', { method: 'POST', body: JSON.stringify(d) });
+            hideModal('recordModal'); e.target.reset(); loadRecords();
+        }
+
+        // --- Prescriptions ---
+        async function loadPrescriptions() {
+            try {
+                const status = document.getElementById('rxStatusFilter')?.value || '';
+                const rxs = await api('/api/prescriptions' + (status ? `?status=${status}` : ''));
+                document.getElementById('prescriptionsTable').innerHTML = rxs?.length ? `<table><thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Provider</th><th>Status</th></tr></thead><tbody>${rxs.map(r => `<tr><td>${esc(r.patient?.lastName)}, ${esc(r.patient?.firstName)}</td><td>${esc(r.medicationName)}</td><td>${esc(r.dosage)}</td><td>${esc(r.frequency)}</td><td>Dr. ${esc(r.provider?.lastName)}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No prescriptions</div>';
+            } catch { document.getElementById('prescriptionsTable').innerHTML = '<div class="empty">Error loading</div>'; }
+        }
+        async function createPrescription(e) {
+            e.preventDefault(); const d = formData(e.target);
+            d.patientId = parseInt(d.patientId); d.providerId = parseInt(d.providerId); d.refills = parseInt(d.refills||0);
+            await api('/api/prescriptions', { method: 'POST', body: JSON.stringify(d) });
+            hideModal('prescriptionModal'); e.target.reset(); loadPrescriptions();
+        }
+
+        // --- Labs ---
+        async function loadLabs() {
+            try {
+                const labs = await api('/api/labresults');
+                document.getElementById('labsTable').innerHTML = labs?.length ? `<table><thead><tr><th>Patient</th><th>Test</th><th>Result</th><th>Flag</th><th>Status</th><th>Ordered</th></tr></thead><tbody>${labs.map(l => `<tr><td>Patient #${l.patientId}</td><td>${esc(l.testName)}</td><td>${esc(l.result||'-')} ${esc(l.unit||'')}</td><td>${l.flag ? statusBadge(l.flag) : '-'}</td><td>${statusBadge(l.status)}</td><td>${fmtDate(l.orderedAt)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No lab results</div>';
+            } catch { document.getElementById('labsTable').innerHTML = '<div class="empty">Error loading</div>'; }
+        }
+        async function createLab(e) {
+            e.preventDefault(); const d = formData(e.target);
+            d.patientId = parseInt(d.patientId); if (d.orderedByProviderId) d.orderedByProviderId = parseInt(d.orderedByProviderId);
+            await api('/api/labresults', { method: 'POST', body: JSON.stringify(d) });
+            hideModal('labModal'); e.target.reset(); loadLabs();
+        }
+
+        // --- Providers ---
+        async function loadProviders() {
+            try {
+                providers = await api('/api/providers') || [];
+                document.getElementById('providersTable').innerHTML = providers.length ? `<table><thead><tr><th>Name</th><th>Specialty</th><th>Department</th><th>Phone</th><th>License</th><th>Status</th></tr></thead><tbody>${providers.map(p => `<tr><td>Dr. ${esc(p.firstName)} ${esc(p.lastName)}</td><td>${esc(p.specialty)}</td><td>${esc(p.department||'-')}</td><td>${esc(p.phone||'-')}</td><td>${esc(p.licenseNumber||'-')}</td><td>${p.isActive ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No providers</div>';
+            } catch { document.getElementById('providersTable').innerHTML = '<div class="empty">Error loading</div>'; }
+        }
+        async function createProvider(e) {
+            e.preventDefault();
+            await api('/api/providers', { method: 'POST', body: JSON.stringify(formData(e.target)) });
+            hideModal('providerModal'); e.target.reset(); providers = []; loadProviders();
+        }
+
+        // Init
+        loadDashboard();
+    </script>
+</body>
+</html>

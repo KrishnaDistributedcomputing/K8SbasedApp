@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Infrastructure Costing Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1419; color: #e1e8ed; min-height: 100vh; }
+        
+        .header { background: linear-gradient(135deg, #0078d4 0%, #005a9e 50%, #004578 100%); padding: 1.5rem 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .header h1 { font-size: 1.6rem; display: flex; align-items: center; gap: 0.75rem; }
+        .header .subtitle { font-size: 0.9rem; opacity: 0.8; margin-top: 0.25rem; }
+        
+        .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        
+        /* Summary Cards */
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .summary-card { background: linear-gradient(135deg, #1a2332 0%, #1e2d3d 100%); border: 1px solid #2a3a4a; border-radius: 12px; padding: 1.25rem; position: relative; overflow: hidden; }
+        .summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .summary-card.blue::before { background: #0078d4; }
+        .summary-card.green::before { background: #00b294; }
+        .summary-card.purple::before { background: #8764b8; }
+        .summary-card.orange::before { background: #ff8c00; }
+        .summary-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8899aa; margin-bottom: 0.5rem; }
+        .summary-card .value { font-size: 2rem; font-weight: 700; }
+        .summary-card .detail { font-size: 0.8rem; color: #6b7c8a; margin-top: 0.25rem; }
+        
+        /* Service Table */
+        .section { background: #1a2332; border: 1px solid #2a3a4a; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+        .section-header { padding: 1rem 1.5rem; border-bottom: 1px solid #2a3a4a; display: flex; align-items: center; justify-content: space-between; }
+        .section-header h2 { font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .section-header .tag { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 10px; background: #0078d4; color: white; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.75rem 1.5rem; background: #151d27; color: #6b7c8a; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        td { padding: 0.75rem 1.5rem; border-top: 1px solid #222d3a; font-size: 0.9rem; }
+        tr:hover td { background: #1e2d3d; }
+        
+        .svc-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-right: 0.75rem; vertical-align: middle; }
+        .svc-icon.aks { background: #326ce5; }
+        .svc-icon.pg { background: #336791; }
+        .svc-icon.acr { background: #0078d4; }
+        .svc-icon.asp { background: #00b294; }
+        .svc-icon.lb { background: #ff8c00; }
+        .svc-icon.disk { background: #8764b8; }
+        .svc-icon.net { background: #e81123; }
+        .svc-icon.cert { background: #00a4ef; }
+        .svc-icon.ip { background: #68217a; }
+        
+        .cost { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .cost-high { color: #ff6b6b; }
+        .cost-mid { color: #ffc107; }
+        .cost-low { color: #00b294; }
+        
+        .tier-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+        .tier-badge.prod { background: rgba(0,178,148,0.15); color: #00b294; border: 1px solid rgba(0,178,148,0.3); }
+        .tier-badge.basic { background: rgba(0,120,212,0.15); color: #5ba7e6; border: 1px solid rgba(0,120,212,0.3); }
+        .tier-badge.free { background: rgba(107,124,138,0.15); color: #8899aa; border: 1px solid rgba(107,124,138,0.3); }
+        
+        .total-row td { background: #151d27; font-weight: 700; font-size: 1rem; border-top: 2px solid #0078d4; }
+        
+        /* Breakdown Charts */
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .bar-chart { padding: 1rem 1.5rem; }
+        .bar-item { margin-bottom: 0.75rem; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .bar-track { height: 8px; background: #222d3a; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease-out; }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .summary-grid { grid-template-columns: 1fr 1fr; }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .summary-grid { grid-template-columns: 1fr; }
+        }
+        
+        .links { padding: 1rem 1.5rem; }
+        .links a { display: inline-block; margin-right: 1rem; margin-bottom: 0.5rem; color: #5ba7e6; text-decoration: none; font-size: 0.9rem; padding: 0.4rem 0.8rem; border: 1px solid #2a3a4a; border-radius: 8px; transition: all 0.2s; }
+        .links a:hover { background: #0078d4; color: white; border-color: #0078d4; }
+        
+        .note { background: rgba(0,120,212,0.1); border: 1px solid rgba(0,120,212,0.2); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #8899aa; }
+        .note strong { color: #5ba7e6; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Azure Infrastructure Costing Dashboard</h1>
+        <div class="subtitle">AKS Store Demo + EHR System · Canada Central Region · Estimated Monthly Costs (CAD/USD)</div>
+    </div>
+    
+    <div class="main">
+        <div class="note">
+            <strong>Note:</strong> Costs are estimated based on Azure pricing for Canada Central as of March 2026. 
+            Actual costs may vary based on usage, data transfer, and reserved instance pricing. 
+            All prices shown are <strong>monthly estimates in USD</strong>.
+        </div>
+        
+        <div class="summary-grid">
+            <div class="summary-card blue">
+                <div class="label">Total Monthly Cost</div>
+                <div class="value" id="totalCost">-</div>
+                <div class="detail">All Azure services combined</div>
+            </div>
+            <div class="summary-card green">
+                <div class="label">Compute (AKS + Web Apps)</div>
+                <div class="value" id="computeCost">-</div>
+                <div class="detail">AKS nodes + App Service</div>
+            </div>
+            <div class="summary-card purple">
+                <div class="label">Data Services</div>
+                <div class="value" id="dataCost">-</div>
+                <div class="detail">PostgreSQL + Storage</div>
+            </div>
+            <div class="summary-card orange">
+                <div class="label">Networking</div>
+                <div class="value" id="netCost">-</div>
+                <div class="detail">Load Balancers + IPs + Egress</div>
+            </div>
+        </div>
+        
+        <div class="chart-grid">
+            <div class="section">
+                <div class="section-header"><h2>📊 Cost by Category</h2></div>
+                <div class="bar-chart" id="categoryChart"></div>
+            </div>
+            <div class="section">
+                <div class="section-header"><h2>📊 Cost by Application</h2></div>
+                <div class="bar-chart" id="appChart"></div>
+            </div>
+        </div>
+
+        <!-- AKS Store Demo Services -->
+        <div class="section">
+            <div class="section-header">
+                <h2>🛒 AKS Store Demo</h2>
+                <span class="tag">AKS Cluster</span>
+            </div>
+            <table>
+                <thead><tr><th>Service</th><th>Resource</th><th>SKU / Tier</th><th>Configuration</th><th>Monthly Cost</th></tr></thead>
+                <tbody id="storeServices"></tbody>
+            </table>
+        </div>
+        
+        <!-- EHR Application Services -->
+        <div class="section">
+            <div class="section-header">
+                <h2>🏥 EHR System</h2>
+                <span class="tag">Web App + AKS + PostgreSQL</span>
+            </div>
+            <table>
+                <thead><tr><th>Service</th><th>Resource</th><th>SKU / Tier</th><th>Configuration</th><th>Monthly Cost</th></tr></thead>
+                <tbody id="ehrServices"></tbody>
+            </table>
+        </div>
+        
+        <!-- Shared Infrastructure -->
+        <div class="section">
+            <div class="section-header">
+                <h2>🔧 Shared Infrastructure</h2>
+                <span class="tag">Common Services</span>
+            </div>
+            <table>
+                <thead><tr><th>Service</th><th>Resource</th><th>SKU / Tier</th><th>Configuration</th><th>Monthly Cost</th></tr></thead>
+                <tbody id="sharedServices"></tbody>
+            </table>
+        </div>
+        
+        <!-- Grand Total -->
+        <div class="section">
+            <table>
+                <tbody>
+                    <tr class="total-row">
+                        <td colspan="4" style="text-align:right; padding-right:2rem;">ESTIMATED TOTAL MONTHLY COST</td>
+                        <td class="cost" id="grandTotal" style="font-size:1.2rem;"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Application Links -->
+        <div class="section">
+            <div class="section-header"><h2>🔗 Application Links</h2></div>
+            <div class="links">
+                <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank">🏥 EHR Portal (HTTPS)</a>
+                <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank">📋 EHR API Swagger</a>
+                <a href="https://ehr-api-canadacentral.azurewebsites.net/health" target="_blank">💚 EHR API Health</a>
+                <a href="https://20.175.132.82" target="_blank">🛒 AKS Store Front (HTTPS)</a>
+                <a href="https://20.175.132.82/admin" target="_blank">👔 AKS Store Admin</a>
+                <a href="https://portal.azure.com" target="_blank">☁️ Azure Portal</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---- Service Data with Real Azure Pricing (Canada Central, March 2026) ----
+        const storeServices = [
+            { icon: 'aks', name: 'Azure Kubernetes Service', resource: 'aks-store-demo', tier: 'Free', tierClass: 'free', config: '3x Standard_DS2_v2 nodes (2 vCPU, 7 GB RAM each)', cost: 313.74, note: '3 × $104.58/node/mo' },
+            { icon: 'disk', name: 'Managed Disks (OS)', resource: 'AKS node OS disks', tier: 'Premium', tierClass: 'prod', config: '3x 128 GB P10 Premium SSD', cost: 57.54, note: '3 × $19.18' },
+            { icon: 'lb', name: 'Load Balancer', resource: 'kubernetes (ingress-nginx)', tier: 'Standard', tierClass: 'basic', config: '1 LB + rules for ingress', cost: 18.25, note: '$18.25 base + rules' },
+            { icon: 'ip', name: 'Public IP Address', resource: 'Ingress controller IP', tier: 'Standard', tierClass: 'basic', config: '1 static public IP', cost: 3.65, note: 'Static IP' },
+            { icon: 'disk', name: 'MongoDB PVC', resource: 'mongodb-data (in-cluster)', tier: 'Premium', tierClass: 'basic', config: '8 GB Managed Disk (PVC)', cost: 1.54, note: 'PersistentVolumeClaim' },
+            { icon: 'disk', name: 'RabbitMQ PVC', resource: 'rabbitmq-data (in-cluster)', tier: 'Premium', tierClass: 'basic', config: '8 GB Managed Disk (PVC)', cost: 1.54, note: 'PersistentVolumeClaim' },
+        ];
+        
+        const ehrServices = [
+            { icon: 'pg', name: 'Azure PostgreSQL Flexible', resource: 'ehrdb-canadacentral', tier: 'Burstable', tierClass: 'prod', config: 'Standard_B1ms (1 vCPU, 2 GB) + 32 GB storage', cost: 24.82, note: '$12.41 compute + $4.14 storage + $8.27 backup' },
+            { icon: 'asp', name: 'App Service Plan', resource: 'asp-ehr-canadacentral', tier: 'B1', tierClass: 'basic', config: 'Linux, 1 core, 1.75 GB RAM', cost: 16.79, note: 'Shared between Web Apps' },
+            { icon: 'asp', name: 'Web App (EHR API)', resource: 'ehr-api-canadacentral', tier: 'B1', tierClass: 'basic', config: '.NET 8 container, HTTPS enabled', cost: 0.00, note: 'Included in App Service Plan' },
+            { icon: 'asp', name: 'Web App (EHR Portal)', resource: 'ehr-portal-canadacentral', tier: 'B1', tierClass: 'basic', config: 'Nginx container, HTTPS enabled', cost: 0.00, note: 'Included in App Service Plan' },
+            { icon: 'aks', name: 'AKS EHR Pods', resource: 'ehr namespace (4 pods)', tier: 'Shared', tierClass: 'free', config: '2x API + 2x Frontend pods on shared AKS', cost: 0.00, note: 'Runs on existing AKS nodes' },
+        ];
+        
+        const sharedServices = [
+            { icon: 'acr', name: 'Azure Container Registry', resource: 'ehracrcanada', tier: 'Basic', tierClass: 'basic', config: '10 GB included storage', cost: 6.08, note: '$6.08/mo Basic tier' },
+            { icon: 'net', name: 'Data Transfer (Egress)', resource: 'Estimated outbound traffic', tier: 'Standard', tierClass: 'basic', config: '~50 GB/mo outbound', cost: 4.38, note: 'First 5 GB free, then ~$0.087/GB' },
+            { icon: 'cert', name: 'cert-manager + TLS', resource: 'Self-signed certificates', tier: 'Open Source', tierClass: 'free', config: 'Kubernetes-native TLS', cost: 0.00, note: 'Free (self-signed)' },
+            { icon: 'net', name: 'Azure DNS / Monitoring', resource: 'Basic monitoring included', tier: 'Free', tierClass: 'free', config: 'Platform metrics, basic logs', cost: 0.00, note: 'Included with services' },
+        ];
+        
+        // ---- Render Functions ----
+        function fmt(n) { return '$' + n.toFixed(2); }
+        function costClass(n) { return n > 100 ? 'cost-high' : n > 20 ? 'cost-mid' : 'cost-low'; }
+        
+        function renderTable(services, containerId) {
+            const tbody = document.getElementById(containerId);
+            tbody.innerHTML = services.map(s => `
+                <tr>
+                    <td><span class="svc-icon ${s.icon}">${iconEmoji(s.icon)}</span>${s.name}</td>
+                    <td>${s.resource}</td>
+                    <td><span class="tier-badge ${s.tierClass}">${s.tier}</span></td>
+                    <td>${s.config}</td>
+                    <td class="cost ${costClass(s.cost)}">${fmt(s.cost)}${s.cost === 0 ? ' <span style="color:#6b7c8a;font-weight:400;font-size:0.8rem">(included)</span>' : ''}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function iconEmoji(type) {
+            const map = { aks: '☸️', pg: '🐘', acr: '📦', asp: '🌐', lb: '⚖️', disk: '💾', net: '🌍', cert: '🔒', ip: '📡' };
+            return map[type] || '•';
+        }
+        
+        function renderBarChart(items, containerId, color) {
+            const el = document.getElementById(containerId);
+            const maxVal = Math.max(...items.map(i => i.value));
+            el.innerHTML = items.map(i => `
+                <div class="bar-item">
+                    <div class="bar-label"><span>${i.name}</span><span class="cost ${costClass(i.value)}">${fmt(i.value)}</span></div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${(i.value/maxVal*100).toFixed(1)}%;background:${i.color||color}"></div></div>
+                </div>
+            `).join('');
+        }
+        
+        // ---- Calculate ----
+        const storeTotal = storeServices.reduce((s, v) => s + v.cost, 0);
+        const ehrTotal = ehrServices.reduce((s, v) => s + v.cost, 0);
+        const sharedTotal = sharedServices.reduce((s, v) => s + v.cost, 0);
+        const grandTotal = storeTotal + ehrTotal + sharedTotal;
+        
+        const computeTotal = 313.74 + 16.79; // AKS nodes + App Service Plan
+        const dataTotal = 24.82 + 57.54 + 1.54 + 1.54; // PostgreSQL + Disks
+        const networkTotal = 18.25 + 3.65 + 4.38 + 6.08; // LB + IP + Egress + ACR
+        
+        // ---- Render ----
+        document.getElementById('totalCost').textContent = fmt(grandTotal);
+        document.getElementById('computeCost').textContent = fmt(computeTotal);
+        document.getElementById('dataCost').textContent = fmt(dataTotal);
+        document.getElementById('netCost').textContent = fmt(networkTotal);
+        document.getElementById('grandTotal').textContent = fmt(grandTotal) + ' /month';
+        
+        renderTable(storeServices, 'storeServices');
+        renderTable(ehrServices, 'ehrServices');
+        renderTable(sharedServices, 'sharedServices');
+        
+        renderBarChart([
+            { name: 'Compute (AKS Nodes)', value: 313.74, color: '#0078d4' },
+            { name: 'Managed Disks', value: 60.62, color: '#8764b8' },
+            { name: 'PostgreSQL Database', value: 24.82, color: '#336791' },
+            { name: 'Load Balancer + IP', value: 21.90, color: '#ff8c00' },
+            { name: 'App Service Plan', value: 16.79, color: '#00b294' },
+            { name: 'Container Registry', value: 6.08, color: '#e81123' },
+            { name: 'Data Transfer', value: 4.38, color: '#68217a' },
+        ], 'categoryChart');
+        
+        renderBarChart([
+            { name: 'AKS Store Demo', value: storeTotal, color: '#326ce5' },
+            { name: 'EHR System', value: ehrTotal, color: '#00b294' },
+            { name: 'Shared Infrastructure', value: sharedTotal, color: '#ff8c00' },
+        ], 'appChart');
+    </script>
+</body>
+</html>
