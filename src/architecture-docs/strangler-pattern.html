@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strangler Fig Pattern — Gradual Service Migration</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;filter:brightness(1.2);}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#065f46 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--green);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:750px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--green);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--green);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.highlight.red{border-left-color:var(--red);}.highlight.blue{border-left-color:var(--accent);}.highlight.orange{border-left-color:var(--orange);}.highlight.purple{border-left-color:var(--purple);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;}@media(max-width:800px){.grid-3{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--green);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+tr:hover td{background:rgba(52,211,153,.03);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--green);}
+.code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Cascadia Code',monospace;font-size:.82rem;overflow-x:auto;line-height:1.6;margin:.75rem 0;color:var(--text);}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.75rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.red{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red);}
+.box.orange{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.box.teal{background:rgba(45,212,191,.12);border:1px solid var(--teal);color:var(--teal);}
+.phase-card{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;}
+.phase-card h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.phase-card p{color:var(--muted);font-size:.85rem;}
+.phase-num{position:absolute;top:-.75rem;left:1rem;background:var(--surface);padding:0 .5rem;font-size:.75rem;font-weight:700;border-radius:4px;}
+.phase-num.p1{color:var(--accent);border:1px solid var(--accent);}.phase-num.p2{color:var(--green);border:1px solid var(--green);}.phase-num.p3{color:var(--orange);border:1px solid var(--orange);}.phase-num.p4{color:var(--purple);border:1px solid var(--purple);}.phase-num.p5{color:var(--red);border:1px solid var(--red);}.phase-num.p6{color:var(--teal);border:1px solid var(--teal);}
+.timeline{border-left:3px solid var(--border);padding-left:1.5rem;margin:1rem 0;}
+.timeline-item{position:relative;margin-bottom:1.5rem;}
+.timeline-item::before{content:'';position:absolute;left:-1.85rem;top:.4rem;width:12px;height:12px;border-radius:50%;border:2px solid var(--green);background:var(--bg);}
+.timeline-item.active::before{background:var(--green);box-shadow:0 0 8px rgba(52,211,153,.5);}
+.timeline-item h4{font-size:.95rem;font-weight:700;margin-bottom:.25rem;}
+.timeline-item p{color:var(--muted);font-size:.85rem;}
+.pct-bar{height:8px;border-radius:4px;background:var(--surface2);margin:.5rem 0;overflow:hidden;}.pct-fill{height:100%;border-radius:4px;}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>🌿 Strangler Fig Pattern</h1>
+    <p class="tagline">Gradually replace a monolithic EHR application with microservices — one bounded context at a time — without a risky "big bang" rewrite. Named after the strangler fig tree that grows around its host until it fully replaces it.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/architecture.html">Architecture</a> <span>/</span> <span>Strangler Pattern</span></div>
+</div>
+<div class="container">
+
+<!-- What Is It -->
+<div class="card">
+    <h2>What Is the Strangler Fig Pattern?</h2>
+    <p>In a tropical forest, a strangler fig seed lands in the canopy of a host tree. It grows roots down the trunk, gradually enveloping the host. Over years, the fig becomes self-supporting and the host tree decomposes inside — replaced entirely, with zero disruption to the forest ecosystem.</p>
+    <p>In software, the pattern works identically:</p>
+    <ol style="color:var(--muted);font-size:.93rem;padding-left:1.5rem;margin-bottom:1rem;">
+        <li style="margin-bottom:.5rem;"><b>Place a facade (API gateway/proxy) in front of the monolith</b> — all traffic goes through it</li>
+        <li style="margin-bottom:.5rem;"><b>Build a new microservice</b> for one bounded context (e.g., Patient Management)</li>
+        <li style="margin-bottom:.5rem;"><b>Route that context's traffic</b> from the monolith to the new service</li>
+        <li style="margin-bottom:.5rem;"><b>Repeat</b> for the next bounded context until the monolith is empty</li>
+        <li style="margin-bottom:.5rem;"><b>Decommission the monolith</b> — it's been "strangled"</li>
+    </ol>
+    <div class="highlight"><b>Why not a big-bang rewrite?</b> Rewrites fail. In healthcare, a failed rewrite means clinicians lose access to patient records. The strangler pattern delivers value incrementally — each migrated service is independently deployable, and the monolith keeps running for everything not yet migrated.</div>
+</div>
+
+<!-- How to Approach -->
+<div class="card">
+    <h2>How to Approach This Migration</h2>
+
+    <h3>Step 1: Install the Facade (Week 1-2)</h3>
+    <p>Place NGINX Ingress + Azure APIM in front of the monolith. Initially, 100% of traffic proxies straight to the monolith. Nothing changes functionally — this just gives you the routing control you need.</p>
+    <div class="event-flow">
+        <span class="box blue">Browser</span><span class="arr">→</span>
+        <span class="box teal">APIM / Ingress (facade)</span><span class="arr">→</span>
+        <span class="box red">Monolith (100% of traffic)</span>
+    </div>
+    <div class="code">
+# NGINX Ingress rewrite rules — initially all traffic goes to monolith
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ehr-facade
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - host: api.ehr.example.com
+      http:
+        paths:
+          # Initially: everything goes to monolith
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ehr-monolith    # <-- will change per-path as we migrate
+                port:
+                  number: 8080
+    </div>
+
+    <h3>Step 2: Pick the First Slice (Week 3)</h3>
+    <p>Choose the first bounded context to extract. The ideal first candidate has these properties:</p>
+    <table>
+        <tr><th>Criterion</th><th>Why It Matters</th><th>Best First Candidate</th></tr>
+        <tr><td>Fewest inbound dependencies</td><td>Fewer callers = fewer things to redirect</td><td>Patient Service (everyone reads from it, few write to it)</td></tr>
+        <tr><td>Clear data ownership</td><td>Single database table cluster = clean extraction</td><td>Patients + Allergies + Vitals = one aggregate</td></tr>
+        <tr><td>Well-defined API surface</td><td>Existing REST-ish endpoints = less design work</td><td>/api/v1/patients already exists</td></tr>
+        <tr><td>High business value</td><td>Proves the pattern delivers real benefits</td><td>Patient Service = most-used, highest query volume</td></tr>
+        <tr><td>Low risk</td><td>Read-heavy services are safer than write-heavy</td><td>Patient reads are 80% of total traffic</td></tr>
+    </table>
+    <div class="highlight blue"><b>Our choice:</b> Patient Service is the first extraction target. It owns 3 tables (patients, allergies, vitals), has the clearest API surface, and is primarily read-heavy. If something goes wrong, we flip the route back to the monolith in 10 seconds.</div>
+
+    <h3>Step 3: Build the New Service (Week 4-8)</h3>
+    <p>Build the Patient microservice alongside the monolith. Both run simultaneously.</p>
+    <div class="grid-2">
+        <div>
+            <h4 style="margin-bottom:.5rem;">What the new service needs:</h4>
+            <ul style="color:var(--muted);font-size:.85rem;padding-left:1.2rem;">
+                <li>ASP.NET Core 8 Web API with its own PostgreSQL database</li>
+                <li>Same API contract as the monolith's patient endpoints</li>
+                <li>Data migrated from monolith's <code>ehrdb.patients</code> table</li>
+                <li>Event publishing to Kafka on every write</li>
+                <li>Health check endpoint for readiness probe</li>
+            </ul>
+        </div>
+        <div>
+            <h4 style="margin-bottom:.5rem;">What stays in the monolith:</h4>
+            <ul style="color:var(--muted);font-size:.85rem;padding-left:1.2rem;">
+                <li>Everything except patient CRUD</li>
+                <li>The monolith still reads patient data (via API call to new service)</li>
+                <li>Monolith's patient table becomes read-only (stale copy for fallback)</li>
+                <li>If new service is down, monolith serves stale data with a warning</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>Step 4: Dual-Write + Data Sync (Week 6-8)</h3>
+    <p>Before switching traffic, set up dual-write so both databases have the same data:</p>
+    <div class="event-flow">
+        <span class="box blue">Write request</span><span class="arr">→</span>
+        <span class="box green">New Patient Service</span><span class="arr">→</span>
+        <span class="box green">patient-db (primary)</span>
+    </div>
+    <div class="event-flow" style="margin-left:2rem;">
+        <span class="box green">PatientCreated event</span><span class="arr">→</span>
+        <span class="box orange">Kafka</span><span class="arr">→</span>
+        <span class="box red">Sync consumer</span><span class="arr">→</span>
+        <span class="box red">monolith ehrdb (secondary)</span>
+    </div>
+    <div class="highlight orange"><b>Critical:</b> During dual-write, the new service's database is the source of truth. The monolith's copy is updated asynchronously via Kafka events. This means there's a brief window (RPO) where the monolith's copy lags behind. For patient reads, this is acceptable — it's only stale by seconds.</div>
+
+    <h3>Step 5: Traffic Shift — Canary (Week 9)</h3>
+    <p>Use Istio VirtualService or APIM to gradually shift traffic from monolith to the new service:</p>
+    <table>
+        <tr><th>Day</th><th>New Service</th><th>Monolith</th><th>Validation</th></tr>
+        <tr><td>Day 1</td><td>5%</td><td>95%</td><td>Monitor error rate, latency p99. Compare response bodies.</td></tr>
+        <tr><td>Day 2</td><td>25%</td><td>75%</td><td>Run synthetic transactions. Verify data consistency.</td></tr>
+        <tr><td>Day 3</td><td>50%</td><td>50%</td><td>Load test at full scale. Check database connection pool.</td></tr>
+        <tr><td>Day 5</td><td>90%</td><td>10%</td><td>Shadow compare remaining 10%. Fix any discrepancies.</td></tr>
+        <tr><td>Day 7</td><td>100%</td><td>0%</td><td>All patient traffic goes to new service. Keep monolith endpoint alive for 2 weeks as fallback.</td></tr>
+    </table>
+    <div class="code">
+# Istio VirtualService for canary routing
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: patient-canary
+spec:
+  hosts: [patient-service]
+  http:
+    - route:
+        - destination:
+            host: patient-service-v2    # New microservice
+          weight: 50
+        - destination:
+            host: ehr-monolith          # Legacy monolith
+          weight: 50
+    </div>
+
+    <h3>Step 6: Decommission Monolith Slice (Week 10)</h3>
+    <p>Once 100% of patient traffic is on the new service for 2 weeks with zero issues:</p>
+    <ol style="color:var(--muted);font-size:.85rem;padding-left:1.5rem;">
+        <li>Stop the dual-write sync consumer</li>
+        <li>Drop the patients/allergies/vitals tables from the monolith's ehrdb</li>
+        <li>Remove patient controller code from the monolith</li>
+        <li>The monolith is now smaller — one bounded context extracted</li>
+    </ol>
+</div>
+
+<!-- Migration Sequence -->
+<div class="card">
+    <h2>Full Migration Sequence — 6 Bounded Contexts</h2>
+    <p>Each extraction follows the same 5-step pattern. Here's the recommended order:</p>
+    <div class="timeline">
+        <div class="timeline-item active">
+            <h4><span style="color:var(--accent);">Phase 1:</span> Patient Management (Month 1-2)</h4>
+            <p>3 tables (patients, allergies, vitals). Read-heavy, clear boundaries. Proves the pattern works. <b>Monolith shrinks from 8 to 5 tables.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:17%;background:var(--accent);"></div></div>
+        </div>
+        <div class="timeline-item">
+            <h4><span style="color:var(--green);">Phase 2:</span> Provider Management (Month 3)</h4>
+            <p>1 table (providers). Simple extraction — providers are reference data with low write volume. <b>Monolith: 4 tables.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:33%;background:var(--green);"></div></div>
+        </div>
+        <div class="timeline-item">
+            <h4><span style="color:var(--orange);">Phase 3:</span> Scheduling (Month 4-5)</h4>
+            <p>1 table (appointments). Depends on Patient and Provider references — consumes their events via anti-corruption layer. <b>Monolith: 3 tables.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:50%;background:var(--orange);"></div></div>
+        </div>
+        <div class="timeline-item">
+            <h4><span style="color:var(--purple);">Phase 4:</span> Clinical Encounters (Month 6-7)</h4>
+            <p>1 table (medical_records). Most complex extraction — encounters reference patients, providers, prescriptions, and labs. Use ACL to resolve cross-references. <b>Monolith: 2 tables.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:67%;background:var(--purple);"></div></div>
+        </div>
+        <div class="timeline-item">
+            <h4><span style="color:var(--red);">Phase 5:</span> Pharmacy (Month 8)</h4>
+            <p>1 table (prescriptions). Drug interaction checks call Patient Service for allergies — a well-defined API boundary. <b>Monolith: 1 table.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:83%;background:var(--red);"></div></div>
+        </div>
+        <div class="timeline-item">
+            <h4><span style="color:var(--teal);">Phase 6:</span> Laboratory (Month 9-10)</h4>
+            <p>1 table (lab_results). Final extraction. After this, the monolith has zero tables and can be decommissioned. <b>Monolith: gone.</b></p>
+            <div class="pct-bar"><div class="pct-fill" style="width:100%;background:var(--teal);"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Anti-Corruption Layer -->
+<div class="card">
+    <h2>Anti-Corruption Layer (ACL)</h2>
+    <p>When a new microservice needs data from the monolith (or vice versa), don't let the monolith's data model leak into the new service. Use an Anti-Corruption Layer — a translation boundary that converts between the two models.</p>
+
+    <h3>Example: Clinical Service Needs Patient Data</h3>
+    <div class="code">
+// Anti-Corruption Layer in Clinical Service
+// Translates monolith's patient model to clinical service's domain model
+
+public class PatientAclClient : IPatientReference
+{
+    private readonly HttpClient _http;  // Calls Patient Service REST API
+
+    public async Task&lt;ClinicalPatient&gt; GetPatientForEncounter(int patientId)
+    {
+        // Call new Patient Service (or monolith during transition)
+        var response = await _http.GetAsync($"/api/v1/patients/{patientId}");
+        var dto = await response.Content.ReadFromJsonAsync&lt;PatientDto&gt;();
+
+        // Translate external model to clinical domain model
+        // Only take what clinical service needs — not the entire patient
+        return new ClinicalPatient
+        {
+            PatientId = dto.PatientId,
+            FullName = $"{dto.FirstName} {dto.LastName}",
+            ActiveAllergies = dto.Allergies
+                .Where(a =&gt; a.IsActive)
+                .Select(a =&gt; new AllergyFlag(a.Allergen, a.Severity))
+                .ToList(),
+            DateOfBirth = dto.DateOfBirth
+            // Note: we don't import insurance info — clinical doesn't need it
+        };
+    }
+}
+    </div>
+    <div class="highlight purple"><b>Key principle:</b> Each microservice owns its own view of external data. The clinical service doesn't store a copy of the patient record — it stores a <code>ClinicalPatient</code> projection with only the fields it needs. If the Patient Service changes its model, only the ACL adapter changes.</div>
+</div>
+
+<!-- Risks and Mitigations -->
+<div class="card">
+    <h2>Risks and How to Mitigate Them</h2>
+    <table>
+        <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+        <tr><td>Data inconsistency during dual-write</td><td>Monolith and microservice return different data for same patient</td><td>Shadow comparison: run both and diff responses for 100% of traffic. Alert on any divergence.</td></tr>
+        <tr><td>Performance regression (network hop)</td><td>Monolith's in-process call becomes HTTP call (1-5ms latency)</td><td>Pre-measure: instrument current in-process call latency. Set budget: new service must be within 2x of original.</td></tr>
+        <tr><td>Team doesn't finish migration (stuck at 50%)</td><td>Half-monolith/half-microservice = worst of both worlds</td><td>Time-box each phase to 2 months. If a phase takes longer, it's a sign you sliced too big — split it.</td></tr>
+        <tr><td>Rollback needed after cutover</td><td>Users on new service, data in new DB, can't go back</td><td>Keep dual-write running for 2 weeks after 100% cutover. Monolith can serve stale reads as fallback.</td></tr>
+        <tr><td>Cross-context transactions</td><td>Monolith uses DB transactions across tables; microservices can't</td><td>Replace with saga pattern: distributed workflow with compensation. Accept eventual consistency.</td></tr>
+    </table>
+</div>
+
+<!-- Current State -->
+<div class="card">
+    <h2>Where We Are Now</h2>
+    <div class="grid-3">
+        <div class="phase-card" style="border-color:var(--green);">
+            <span class="phase-num p2">DONE</span>
+            <h4>Facade Installed</h4>
+            <p>NGINX Ingress Controller running at <code>20.175.132.82</code>. APIM routing in architecture design. All traffic goes through ingress.</p>
+        </div>
+        <div class="phase-card" style="border-color:var(--green);">
+            <span class="phase-num p2">DONE</span>
+            <h4>Monolith Running</h4>
+            <p>EHR API (v3) deployed as monolith with all 8 tables in <code>ehrdb</code>. Serving all 6 bounded contexts from single deployment.</p>
+        </div>
+        <div class="phase-card" style="border-color:var(--accent);">
+            <span class="phase-num p1">NEXT</span>
+            <h4>Extract Patient Service</h4>
+            <p>First microservice extraction. Create <code>patient-db</code>, build Patient Service, set up dual-write, canary deploy.</p>
+        </div>
+    </div>
+    <div class="highlight"><b>Timeline:</b> With 6 bounded contexts and ~2 months per extraction, full migration takes approximately 10-12 months. The monolith shrinks with each phase, and clinical staff see improvements incrementally — not as one risky cutover.</div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/architecture.html">Architecture</a> · <a href="/rto-rpo.html">RTO/RPO Requirements</a> · <a href="/tcp-to-https.html">TCP to HTTPS Migration</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

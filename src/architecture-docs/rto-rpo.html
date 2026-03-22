@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTO/RPO Requirements — EHR Platform</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;filter:brightness(1.2);}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#7f1d1d 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--red);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:750px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--red);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--red);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.highlight.green{border-left-color:var(--green);}.highlight.blue{border-left-color:var(--accent);}.highlight.orange{border-left-color:var(--orange);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}@media(max-width:800px){.grid-3{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--red);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+tr:hover td{background:rgba(248,113,113,.03);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--red);}
+.metric-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;}
+.metric-card .num{font-size:2rem;font-weight:800;margin-bottom:.25rem;}
+.metric-card .label{font-size:.8rem;color:var(--muted);}
+.tier{padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;display:inline-block;}
+.tier.critical{background:rgba(248,113,113,.15);color:var(--red);}.tier.high{background:rgba(251,146,60,.15);color:var(--orange);}.tier.medium{background:rgba(56,189,248,.15);color:var(--accent);}.tier.low{background:rgba(52,211,153,.15);color:var(--green);}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.75rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.red{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red);}
+.box.orange{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Cascadia Code',monospace;font-size:.82rem;overflow-x:auto;line-height:1.6;margin:.75rem 0;}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>⏱️ RTO / RPO Requirements</h1>
+    <p class="tagline">Recovery Time Objective and Recovery Point Objective define how fast we recover and how much data we can afford to lose. These are the two most critical numbers in disaster recovery planning.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/architecture.html">Architecture</a> <span>/</span> <span>RTO / RPO</span></div>
+</div>
+<div class="container">
+
+<!-- What Are RTO/RPO -->
+<div class="card">
+    <h2>What Are RTO and RPO?</h2>
+    <div class="grid-2">
+        <div>
+            <h3>RTO — Recovery Time Objective</h3>
+            <p><b>How long can the system be down?</b> RTO is the maximum acceptable duration between a failure and service restoration. If your RTO is 15 minutes, you have 15 minutes from the moment the system goes down to the moment patients can use it again.</p>
+            <div class="highlight">Think of RTO as: "The hospital can function without the EHR for X minutes before patient safety is at risk."</div>
+        </div>
+        <div>
+            <h3>RPO — Recovery Point Objective</h3>
+            <p><b>How much data can we lose?</b> RPO is the maximum acceptable amount of data loss measured in time. If your RPO is 5 minutes, the worst case after recovery is that you lose the last 5 minutes of data entry (prescriptions, vitals, notes).</p>
+            <div class="highlight green">Think of RPO as: "After recovery, the most recent X minutes of patient data might be missing and needs to be re-entered."</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tier Classification -->
+<div class="card">
+    <h2>Service Tier Classification</h2>
+    <p>Not every service needs the same recovery guarantees. A prescription service going down is life-threatening; a reporting dashboard being slow is inconvenient. We classify services into four tiers:</p>
+    <table>
+        <tr><th>Tier</th><th>RTO</th><th>RPO</th><th>Services</th><th>Availability SLA</th><th>Why This Tier</th></tr>
+        <tr>
+            <td><span class="tier critical">Tier 0 — Critical</span></td>
+            <td><b style="color:var(--red);">&lt; 1 min</b></td>
+            <td><b style="color:var(--red);">0 (zero data loss)</b></td>
+            <td>Patient Service, Pharmacy Service</td>
+            <td>99.99% (52 min/year)</td>
+            <td>Patient identity and active prescriptions are life-critical. An incorrect or missing allergy record during prescribing can cause death.</td>
+        </tr>
+        <tr>
+            <td><span class="tier high">Tier 1 — High</span></td>
+            <td><b style="color:var(--orange);">&lt; 5 min</b></td>
+            <td><b style="color:var(--orange);">&lt; 1 min</b></td>
+            <td>Clinical Service, Lab Service</td>
+            <td>99.95% (4.4 hrs/year)</td>
+            <td>Active encounters and lab results must be available quickly. Clinicians can briefly use paper fallback but not for long.</td>
+        </tr>
+        <tr>
+            <td><span class="tier medium">Tier 2 — Standard</span></td>
+            <td><b style="color:var(--accent);">&lt; 15 min</b></td>
+            <td><b style="color:var(--accent);">&lt; 5 min</b></td>
+            <td>Scheduling Service, Notification Service</td>
+            <td>99.9% (8.8 hrs/year)</td>
+            <td>Missed appointment reminders are annoying but not dangerous. Scheduling can fall back to phone for 15 minutes.</td>
+        </tr>
+        <tr>
+            <td><span class="tier low">Tier 3 — Low</span></td>
+            <td><b style="color:var(--green);">&lt; 1 hr</b></td>
+            <td><b style="color:var(--green);">&lt; 30 min</b></td>
+            <td>Audit Service, Reporting, Analytics</td>
+            <td>99.5% (1.8 days/year)</td>
+            <td>Audit logs are append-only and can be replayed from Kafka. Reports can wait. No patient care impact.</td>
+        </tr>
+    </table>
+</div>
+
+<!-- How to Approach -->
+<div class="card">
+    <h2>How to Approach RTO/RPO in This Architecture</h2>
+    <p>Meeting RTO/RPO targets requires a layered strategy across compute, data, and networking. Here's the approach for each layer:</p>
+
+    <h3>Step 1: Classify Every Service</h3>
+    <p>Walk through each microservice with clinical stakeholders and ask: "If this service is down for X minutes, what happens to patient care?" The answer determines the tier. Don't guess — clinicians know which workflows are critical.</p>
+    <div class="highlight blue"><b>Action:</b> Create a service catalog spreadsheet. For each service, record: service name, owning team, tier, agreed RTO, agreed RPO, data store, backup frequency. Get sign-off from both engineering and clinical leadership.</div>
+
+    <h3>Step 2: Design Data Protection per Tier</h3>
+    <table>
+        <tr><th>Tier</th><th>Database Strategy</th><th>Backup Approach</th><th>Replication</th></tr>
+        <tr>
+            <td><span class="tier critical">Tier 0</span></td>
+            <td>Azure PostgreSQL Flexible Server with zone-redundant HA</td>
+            <td>Continuous WAL archiving to Azure Blob (every transaction)</td>
+            <td>Synchronous replication to standby in different AZ. Automatic failover &lt; 30 seconds.</td>
+        </tr>
+        <tr>
+            <td><span class="tier high">Tier 1</span></td>
+            <td>Azure PostgreSQL with same-zone HA</td>
+            <td>Point-in-time restore (PITR) with 5-minute granularity</td>
+            <td>Asynchronous replication. RPO up to 1 minute of transactions.</td>
+        </tr>
+        <tr>
+            <td><span class="tier medium">Tier 2</span></td>
+            <td>Single PostgreSQL instance</td>
+            <td>Automated daily backups + PITR</td>
+            <td>No replication. Restore from backup if instance fails.</td>
+        </tr>
+        <tr>
+            <td><span class="tier low">Tier 3</span></td>
+            <td>Single instance, relaxed I/O</td>
+            <td>Daily backup, 7-day retention</td>
+            <td>None. Rebuild from Kafka event replay if needed.</td>
+        </tr>
+    </table>
+
+    <h3>Step 3: Design Compute Redundancy</h3>
+    <table>
+        <tr><th>Tier</th><th>AKS Strategy</th><th>Pod Replicas</th><th>PDB (PodDisruptionBudget)</th><th>Node Spread</th></tr>
+        <tr>
+            <td><span class="tier critical">Tier 0</span></td>
+            <td>Multi-AZ node pool, priority class = system-critical</td>
+            <td>Min 3 replicas</td>
+            <td><code>minAvailable: 2</code></td>
+            <td>topologySpreadConstraints across 3 AZs</td>
+        </tr>
+        <tr>
+            <td><span class="tier high">Tier 1</span></td>
+            <td>Multi-AZ node pool</td>
+            <td>Min 2 replicas</td>
+            <td><code>minAvailable: 1</code></td>
+            <td>Anti-affinity across nodes</td>
+        </tr>
+        <tr>
+            <td><span class="tier medium">Tier 2</span></td>
+            <td>Standard node pool</td>
+            <td>2 replicas</td>
+            <td><code>minAvailable: 1</code></td>
+            <td>Preferred anti-affinity</td>
+        </tr>
+        <tr>
+            <td><span class="tier low">Tier 3</span></td>
+            <td>Spot instances allowed</td>
+            <td>1-2 replicas</td>
+            <td>None</td>
+            <td>No constraint</td>
+        </tr>
+    </table>
+
+    <h3>Step 4: Implement Failover Testing</h3>
+    <p>RTO/RPO numbers are meaningless unless tested. Schedule chaos engineering exercises:</p>
+    <div class="grid-2">
+        <div class="highlight">
+            <b>Monthly:</b> Kill a random pod of a Tier 0 service. Measure time to full recovery. Must be &lt; 30 seconds (Kubernetes auto-restart + readiness probe). Record actual RTO.
+        </div>
+        <div class="highlight green">
+            <b>Quarterly:</b> Simulate AZ failure by cordoning all nodes in one zone. Measure time for pods to reschedule to remaining zones. Verify zero downtime for Tier 0/1 services.
+        </div>
+        <div class="highlight blue">
+            <b>Semi-annually:</b> Full DR rehearsal. Restore Tier 0 databases from backup to a new region. Measure actual RPO (compare last backup timestamp to failure time) and actual RTO (time to serve first request).
+        </div>
+        <div class="highlight orange">
+            <b>Annually:</b> Tabletop exercise with clinical staff. Walk through a scenario: "The Canada Central region is completely offline. What's the manual fallback? How do clinicians access patient records?"
+        </div>
+    </div>
+</div>
+
+<!-- Azure Implementation -->
+<div class="card">
+    <h2>Azure Implementation Details</h2>
+    <h3>PostgreSQL HA Configuration (Tier 0)</h3>
+    <div class="code">
+# Enable zone-redundant HA for patient-db (Tier 0)
+az postgres flexible-server update \
+  --resource-group rg-aks-store-demo \
+  --name patient-db-canadacentral \
+  --high-availability ZoneRedundant \
+  --standby-availability-zone 2
+
+# Verify HA status
+az postgres flexible-server show \
+  --name patient-db-canadacentral \
+  --query "{HA: highAvailability.mode, State: highAvailability.state, StandbyAZ: highAvailability.standbyAvailabilityZone}"
+
+# Configure backup retention (35 days for Tier 0)
+az postgres flexible-server update \
+  --name patient-db-canadacentral \
+  --backup-retention 35
+    </div>
+
+    <h3>AKS PodDisruptionBudget (Tier 0)</h3>
+    <div class="code">
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: patient-service-pdb
+  namespace: ehr-core
+spec:
+  minAvailable: 2          # Always keep 2 of 3 pods running
+  selector:
+    matchLabels:
+      app: patient-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-service
+  namespace: ehr-core
+spec:
+  replicas: 3               # 3 replicas across 3 AZs
+  template:
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: patient-service
+      priorityClassName: system-cluster-critical
+    </div>
+
+    <h3>Kafka Event Replay for Tier 3 Recovery</h3>
+    <div class="code">
+# Audit service can rebuild its entire state from Kafka
+# Topic retention: 30 days for audit events
+# Consumer group: audit-service-rebuild
+
+# Reset consumer offset to beginning (full replay)
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group audit-service-rebuild \
+  --topic ehr.audit.events \
+  --reset-offsets --to-earliest --execute
+
+# Process rate: ~50,000 events/min
+# Full rebuild of 30-day audit log: ~2 hours
+    </div>
+</div>
+
+<!-- Monitoring -->
+<div class="card">
+    <h2>Monitoring RTO/RPO Compliance</h2>
+    <p>Set up alerts that fire <b>before</b> an RTO/RPO breach, not after:</p>
+    <table>
+        <tr><th>Alert</th><th>Condition</th><th>Tier</th><th>Action</th></tr>
+        <tr><td>DB replication lag</td><td>Lag &gt; 30 seconds</td><td><span class="tier critical">Tier 0</span></td><td>Page on-call DBA immediately</td></tr>
+        <tr><td>Backup age</td><td>Last backup &gt; 2x frequency</td><td>All</td><td>Alert backup team</td></tr>
+        <tr><td>Pod restart count</td><td>&gt; 3 restarts in 5 min</td><td><span class="tier high">Tier 0/1</span></td><td>Page on-call SRE</td></tr>
+        <tr><td>AZ health</td><td>All nodes in 1 AZ NotReady</td><td><span class="tier critical">Tier 0</span></td><td>Auto-failover, page SRE</td></tr>
+        <tr><td>PITR gap</td><td>WAL gap &gt; 5 min</td><td><span class="tier high">Tier 1</span></td><td>Investigate WAL archiving</td></tr>
+        <tr><td>Failover duration</td><td>Last failover took &gt; RTO</td><td>All</td><td>Post-incident review</td></tr>
+    </table>
+    <div class="highlight"><b>Key metric:</b> Track "actual RTO" and "actual RPO" from every incident and failover test. Plot these against targets. If actuals are consistently close to targets, your margins are too thin — tighten the architecture.</div>
+</div>
+
+<!-- Decision Matrix -->
+<div class="card">
+    <h2>Cost vs. Recovery Tradeoff</h2>
+    <p>Tighter RTO/RPO costs more. Here's the real cost impact per tier:</p>
+    <table>
+        <tr><th>Tier</th><th>DB Cost Multiplier</th><th>Compute Cost Multiplier</th><th>Why</th></tr>
+        <tr><td><span class="tier critical">Tier 0</span></td><td>2.5-3x (HA + sync replication + premium storage)</td><td>3x (3 pods, priority scheduling)</td><td>Synchronous replication doubles I/O cost. Three AZ-spread pods need 3x compute.</td></tr>
+        <tr><td><span class="tier high">Tier 1</span></td><td>1.8-2x (HA + async replication)</td><td>2x (2 pods)</td><td>Async replication is cheaper. Two pods is standard for HA.</td></tr>
+        <tr><td><span class="tier medium">Tier 2</span></td><td>1x (single instance + backup)</td><td>2x (2 pods for rolling deploy)</td><td>Backups are included in Azure PG pricing.</td></tr>
+        <tr><td><span class="tier low">Tier 3</span></td><td>0.7x (spot-eligible, relaxed I/O)</td><td>1x (single pod OK)</td><td>Spot instances save 60-80%. Kafka replay replaces backup need.</td></tr>
+    </table>
+    <div class="highlight orange"><b>Decision framework:</b> Start with Tier 2 for every service. Promote to Tier 1 or 0 only after clinical risk assessment. Never start at Tier 0 — it's 3x the cost and you'll run out of budget before you have real data on what actually needs it.</div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/architecture.html">Architecture</a> · <a href="/tcp-to-https.html">TCP to HTTPS Migration</a> · <a href="/strangler-pattern.html">Strangler Pattern</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

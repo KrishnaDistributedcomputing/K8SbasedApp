@@ -11,4 +11,7 @@ COPY pharmacy.html /usr/share/nginx/html/pharmacy.html
 COPY laboratory.html /usr/share/nginx/html/laboratory.html
 COPY provider-management.html /usr/share/nginx/html/provider-management.html
 COPY api-versions.html /usr/share/nginx/html/api-versions.html
+COPY rto-rpo.html /usr/share/nginx/html/rto-rpo.html
+COPY tcp-to-https.html /usr/share/nginx/html/tcp-to-https.html
+COPY strangler-pattern.html /usr/share/nginx/html/strangler-pattern.html
 EXPOSE 8080

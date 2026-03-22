@@ -400,6 +400,34 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 
 </div><!-- /app-grid -->
 
+<!-- ===== MIGRATION & STRATEGY GUIDES ===== -->
+<div class="arch-summary" style="margin-top:2rem;">
+    <h2>📋 Migration &amp; Strategy Guides</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-top:1.25rem;">
+        <a href="/rto-rpo.html" style="text-decoration:none;color:inherit;display:block;">
+            <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #f87171;border-radius:12px;padding:1.5rem;transition:transform .2s,box-shadow .2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:1.5rem;margin-bottom:.5rem;">⏱️</div>
+                <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">RTO / RPO Requirements</div>
+                <div style="color:var(--muted);font-size:.85rem;">Recovery Time &amp; Recovery Point objectives per service tier. How fast we recover, how much data we can lose, and the Azure implementation for each tier.</div>
+            </div>
+        </a>
+        <a href="/tcp-to-https.html" style="text-decoration:none;color:inherit;display:block;">
+            <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #2dd4bf;border-radius:12px;padding:1.5rem;transition:transform .2s,box-shadow .2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:1.5rem;margin-bottom:.5rem;">🔌</div>
+                <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">TCP to HTTPS Migration</div>
+                <div style="color:var(--muted);font-size:.85rem;">Moving from raw TCP socket communication to HTTPS/REST APIs with Istio mTLS. Phase-by-phase approach with Kubernetes manifests and NetworkPolicy examples.</div>
+            </div>
+        </a>
+        <a href="/strangler-pattern.html" style="text-decoration:none;color:inherit;display:block;">
+            <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #34d399;border-radius:12px;padding:1.5rem;transition:transform .2s,box-shadow .2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:1.5rem;margin-bottom:.5rem;">🌿</div>
+                <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">Strangler Fig Pattern</div>
+                <div style="color:var(--muted);font-size:.85rem;">Gradual monolith-to-microservices migration. Dual-write, canary routing, anti-corruption layers, and a 6-phase extraction timeline for all bounded contexts.</div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <!-- ===== TECHNOLOGY STACK SUMMARY ===== -->
 <div class="arch-summary">
     <h2>🔧 Technology Stack</h2>
