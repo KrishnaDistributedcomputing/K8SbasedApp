@@ -135,6 +135,7 @@ tr:hover td{background:rgba(56,189,248,.03);}
     <button data-section="security">Security</button>
     <button data-section="observability">Observability</button>
     <button data-section="roadmap">Migration Roadmap</button>
+    <button data-section="k8supgrade">K8s Upgrade</button>
 </div>
 
 <div class="main">
@@ -1097,9 +1098,247 @@ Each phase uses <span class="hl">dual-write + CDC</span> to maintain consistency
     </div>
 </div>
 
+<!-- ==================== K8S UPGRADE STRATEGY ==================== -->
+<div id="sec-k8supgrade" class="section">
+
+    <!-- Strategy Overview -->
+    <div class="card">
+        <h2>☸️ Kubernetes Upgrade Strategy</h2>
+        <p style="color:var(--muted);margin-bottom:1rem;">AKS follows the upstream Kubernetes release cadence — 3 minor releases per year. Each minor version is supported for <b style="color:var(--accent);">12 months</b> from GA. Staying current is critical for security patches, bug fixes, and avoiding forced auto-upgrades when a version reaches end-of-life.</p>
+
+        <div class="grid-4" style="margin-bottom:1rem;">
+            <div class="stat"><div class="num">1.33</div><div class="label">Current K8s Version</div></div>
+            <div class="stat"><div class="num" style="color:var(--green);">N+2</div><div class="label">Max Skip Policy</div></div>
+            <div class="stat"><div class="num" style="color:var(--orange);">12 mo</div><div class="label">Support Window</div></div>
+            <div class="stat"><div class="num" style="color:var(--purple);">~4 mo</div><div class="label">Recommended Upgrade Cadence</div></div>
+        </div>
+    </div>
+
+    <!-- Upgrade Policy -->
+    <div class="card">
+        <h2>📋 Upgrade Policy &amp; Governance</h2>
+        <table>
+            <tr><th>Policy</th><th>Requirement</th><th>Rationale</th></tr>
+            <tr><td><b>Version Currency</b></td><td>Stay within N-1 of latest GA</td><td>AKS auto-upgrades past end-of-life; avoid unplanned disruptions</td></tr>
+            <tr><td><b>Upgrade Cadence</b></td><td>Every 4 months (align with K8s releases)</td><td>Prevents multi-version jumps; smaller delta = lower risk</td></tr>
+            <tr><td><b>Staging First</b></td><td>Non-prod upgraded ≥7 days before production</td><td>Validates API deprecations, add-on compatibility, app behaviour</td></tr>
+            <tr><td><b>Change Window</b></td><td>Tuesdays/Wednesdays, 06:00–10:00 UTC</td><td>Low-traffic window; avoids Mondays (deployment backlog) and Fridays (weekend risk)</td></tr>
+            <tr><td><b>Rollback Plan</b></td><td>Blue-green node pool swap</td><td>Add new node pool at target version, drain old, delete if green is healthy</td></tr>
+            <tr><td><b>PDB Enforcement</b></td><td>All workloads require PodDisruptionBudgets</td><td>Guarantees availability during node surge/drain</td></tr>
+            <tr><td><b>Deprecation Review</b></td><td>Run <code>kubectl deprecations</code> (pluto) before upgrade</td><td>Catch removed APIs before they break deployments</td></tr>
+            <tr><td><b>Add-on Compatibility</b></td><td>Validate NGINX Ingress, cert-manager, CSI drivers</td><td>Add-on version matrix must be checked per K8s version</td></tr>
+        </table>
+    </div>
+
+    <!-- Upgrade Phases Diagram -->
+    <div class="card">
+        <h2>🔄 Upgrade Execution Phases</h2>
+        <div class="diagram">
+<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span>
+  <span class="hl4">WEEK -8 to -6</span>          <span class="hl4">WEEK -5 to -3</span>          <span class="hl4">WEEK -2 to -1</span>          <span class="hl2">DEPLOY DAY</span>          <span class="hl4">+1 to +2 WEEKS</span>
+  <span class="hl">DISCOVERY</span>               <span class="hl">PREPARATION</span>              <span class="hl">VALIDATION</span>              <span class="hl2">PRODUCTION</span>           <span class="hl">POST-UPGRADE</span>
+<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span>
+                                                                               │
+  • Review K8s changelog    • Update Helm charts       • Upgrade staging AKS    │  <span class="hl2">• Upgrade prod</span>        • Monitor SLOs 72h
+  • Check API deprecations  • Update Dockerfiles       • Run full test suite    │  <span class="hl2">  control plane</span>      • Check error rates
+  • Audit add-on versions   • Pin add-on versions      • Load test (50% prod)   │  <span class="hl2">• Surge node pool</span>    • Verify autoscaling
+  • Review CVEs fixed       • Update PDBs if needed    • Validate monitoring    │  <span class="hl2">• Drain old nodes</span>    • Update runbooks
+  • Capacity planning       • Update network policies  • DR rehearsal           │  <span class="hl2">• Smoke tests</span>        • Delete old node pool
+  • Stakeholder sign-off    • Prepare rollback plan    • Change Advisory Board  │  <span class="hl2">• Health checks</span>      • Close change ticket
+                                                                               │
+<span class="hl">═══════════════════════════════════════════════════════════════════════════════</span></div>
+    </div>
+
+    <!-- Pre-Upgrade Checklist -->
+    <div class="card">
+        <h2>✅ Pre-Upgrade Checklist</h2>
+        <div class="grid-2">
+            <div>
+                <h3>🔍 Discovery &amp; Analysis</h3>
+                <table>
+                    <tr><th>#</th><th>Task</th><th>Tool / Command</th></tr>
+                    <tr><td>1</td><td>Check available AKS versions</td><td><code>az aks get-upgrades -g rg-aks-store-demo -n aks-store-demo</code></td></tr>
+                    <tr><td>2</td><td>Scan for deprecated APIs</td><td><code>pluto detect-all-in-cluster</code></td></tr>
+                    <tr><td>3</td><td>Review K8s changelog</td><td>kubernetes.io/blog + CHANGELOG.md</td></tr>
+                    <tr><td>4</td><td>Check add-on compatibility matrix</td><td>AKS release notes + add-on docs</td></tr>
+                    <tr><td>5</td><td>Verify node pool OS image</td><td><code>az aks nodepool show --query nodeImageVersion</code></td></tr>
+                    <tr><td>6</td><td>Audit PodDisruptionBudgets</td><td><code>kubectl get pdb -A</code></td></tr>
+                    <tr><td>7</td><td>Check resource quotas &amp; limits</td><td><code>kubectl describe quota -A</code></td></tr>
+                </table>
+            </div>
+            <div>
+                <h3>🛠️ Preparation &amp; Execution</h3>
+                <table>
+                    <tr><th>#</th><th>Task</th><th>Tool / Command</th></tr>
+                    <tr><td>8</td><td>Upgrade staging cluster</td><td><code>az aks upgrade -g rg-staging -n aks-staging -k 1.34</code></td></tr>
+                    <tr><td>9</td><td>Run integration tests in staging</td><td>CI pipeline (GitHub Actions)</td></tr>
+                    <tr><td>10</td><td>Load test at 50% production scale</td><td>k6 / Azure Load Testing</td></tr>
+                    <tr><td>11</td><td>Upgrade prod control plane</td><td><code>az aks upgrade --control-plane-only -k 1.34</code></td></tr>
+                    <tr><td>12</td><td>Add new node pool at target version</td><td><code>az aks nodepool add --kubernetes-version 1.34</code></td></tr>
+                    <tr><td>13</td><td>Cordon &amp; drain old nodes</td><td><code>kubectl cordon/drain</code></td></tr>
+                    <tr><td>14</td><td>Delete old node pool</td><td><code>az aks nodepool delete</code></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Matrix -->
+    <div class="card">
+        <h2>⚠️ Upgrade Risk Matrix</h2>
+        <table>
+            <tr><th>Risk</th><th>Impact</th><th>Probability</th><th>Mitigation</th></tr>
+            <tr><td>Deprecated API breaks deployment</td><td><span class="badge red">High</span></td><td><span class="badge orange">Medium</span></td><td>Run pluto scan; test in staging first</td></tr>
+            <tr><td>Add-on incompatibility (NGINX, cert-manager)</td><td><span class="badge red">High</span></td><td><span class="badge orange">Medium</span></td><td>Pin versions; check release matrix</td></tr>
+            <tr><td>Pod eviction causing service disruption</td><td><span class="badge orange">Medium</span></td><td><span class="badge blue">Low</span></td><td>PDBs on all workloads; surge node pool</td></tr>
+            <tr><td>Persistent volume detach/reattach failure</td><td><span class="badge red">High</span></td><td><span class="badge blue">Low</span></td><td>CSI driver pre-upgrade; backup PVs</td></tr>
+            <tr><td>Network policy incompatibility</td><td><span class="badge orange">Medium</span></td><td><span class="badge blue">Low</span></td><td>Test network policies in staging</td></tr>
+            <tr><td>Custom webhook/admission controller failure</td><td><span class="badge red">High</span></td><td><span class="badge orange">Medium</span></td><td>Review webhook API versions</td></tr>
+        </table>
+    </div>
+
+    <!-- AKS Release Calendar -->
+    <div class="card">
+        <h2>📅 AKS Version Lifecycle &amp; Projected Schedule</h2>
+        <table>
+            <tr><th>K8s Version</th><th>AKS GA (Est.)</th><th>End-of-Life (Est.)</th><th>Upgrade Target</th><th>Status</th></tr>
+            <tr><td><b>1.31</b></td><td>Oct 2024</td><td>Oct 2025</td><td>→ 1.32 / 1.33</td><td><span class="badge red">EOL</span></td></tr>
+            <tr><td><b>1.32</b></td><td>Feb 2025</td><td>Feb 2026</td><td>→ 1.33 / 1.34</td><td><span class="badge red">EOL</span></td></tr>
+            <tr><td><b>1.33</b></td><td>Jun 2025</td><td>Jun 2026</td><td>→ 1.34</td><td><span class="badge green">Current ✅</span></td></tr>
+            <tr><td><b>1.34</b></td><td>Oct 2025</td><td>Oct 2026</td><td>→ 1.35</td><td><span class="badge blue">Next Target</span></td></tr>
+            <tr><td><b>1.35</b></td><td>Feb 2026</td><td>Feb 2027</td><td>→ 1.36</td><td><span class="badge purple">Preview</span></td></tr>
+        </table>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:.5rem;">
+            ⚠️ Dates are estimated based on upstream Kubernetes release cadence. Always check
+            <a href="https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions" target="_blank">AKS supported versions</a> for official dates.
+        </p>
+    </div>
+
+    <!-- Component Compatibility -->
+    <div class="card">
+        <h2>🧩 Component Version Compatibility Matrix</h2>
+        <table>
+            <tr><th>Component</th><th>Current Version</th><th>K8s 1.33 ✅</th><th>K8s 1.34</th><th>K8s 1.35</th><th>Action Required</th></tr>
+            <tr><td><b>NGINX Ingress Controller</b></td><td>v1.12.0</td><td><span class="badge green">✓</span></td><td><span class="badge orange">Check</span></td><td><span class="badge orange">Check</span></td><td>Review chart version ≥ 4.12</td></tr>
+            <tr><td><b>cert-manager</b></td><td>v1.17.1</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge orange">Check</span></td><td>Validate CRD API versions</td></tr>
+            <tr><td><b>Azure CNI</b></td><td>Latest</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td>Managed by AKS</td></tr>
+            <tr><td><b>CoreDNS</b></td><td>Managed</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td>Managed by AKS</td></tr>
+            <tr><td><b>Helm</b></td><td>v3.x</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td>Keep CLI updated</td></tr>
+            <tr><td><b>kubectl</b></td><td>v1.33</td><td><span class="badge green">✓</span></td><td><span class="badge orange">Upgrade</span></td><td><span class="badge orange">Upgrade</span></td><td>Keep within ±1 of cluster version</td></tr>
+        </table>
+    </div>
+
+    <!-- Blue-Green Node Pool Upgrade Strategy -->
+    <div class="card">
+        <h2>🔵🟢 Blue-Green Node Pool Upgrade</h2>
+        <div class="diagram">
+<span class="hl">Step 1: Upgrade Control Plane Only</span>
+  az aks upgrade -g <span class="hl2">rg-aks-store-demo</span> -n <span class="hl2">aks-store-demo</span> \
+    --kubernetes-version <span class="hl3">1.34</span> --control-plane-only
+
+<span class="hl">Step 2: Add New "Green" Node Pool at Target Version</span>
+  az aks nodepool add -g <span class="hl2">rg-aks-store-demo</span> --cluster-name <span class="hl2">aks-store-demo</span> \
+    --name <span class="hl2">green34</span> --node-count <span class="hl3">3</span> --node-vm-size <span class="hl3">Standard_DS2_v2</span> \
+    --kubernetes-version <span class="hl3">1.34</span> --max-pods <span class="hl3">250</span>
+
+<span class="hl">Step 3: Cordon Old "Blue" Nodes</span>
+  kubectl cordon -l agentpool=<span class="hl2">nodepool1</span>
+
+<span class="hl">Step 4: Drain Old Nodes (respecting PDBs)</span>
+  kubectl drain -l agentpool=<span class="hl2">nodepool1</span> \
+    --ignore-daemonsets --delete-emptydir-data --grace-period=<span class="hl3">60</span>
+
+<span class="hl">Step 5: Validate Green Pool Health</span>
+  kubectl get nodes -l agentpool=<span class="hl2">green34</span>
+  kubectl get pods -A -o wide | grep <span class="hl2">green34</span>
+  <span class="hl4">→ Run smoke tests, check SLOs for 1-2 hours</span>
+
+<span class="hl">Step 6: Delete Old "Blue" Node Pool</span>
+  az aks nodepool delete -g <span class="hl2">rg-aks-store-demo</span> --cluster-name <span class="hl2">aks-store-demo</span> \
+    --name <span class="hl2">nodepool1</span> --no-wait</div>
+    </div>
+
+    <!-- ===== INTERACTIVE UPGRADE SCHEDULE CALENDAR ===== -->
+    <div class="card" id="upgrade-calendar-card">
+        <h2>📅 Upgrade Schedule Planner</h2>
+        <p style="color:var(--muted);margin-bottom:1.25rem;">Select your target <b style="color:var(--accent);">production deployment date</b> and the planner will generate a complete timeline showing when each phase of preparation must begin.</p>
+
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+            <div>
+                <label for="deployDate" style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:.25rem;">🎯 Target Production Deploy Date</label>
+                <input type="date" id="deployDate" style="padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--accent);font-size:1rem;font-weight:600;cursor:pointer;">
+            </div>
+            <div>
+                <label for="upgradeTarget" style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:.25rem;">☸️ Target K8s Version</label>
+                <select id="upgradeTarget" style="padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--accent);font-size:1rem;font-weight:600;cursor:pointer;">
+                    <option value="1.34">1.34 (Next)</option>
+                    <option value="1.35">1.35 (Preview)</option>
+                    <option value="1.36">1.36 (Future)</option>
+                </select>
+            </div>
+            <div style="padding-top:1.1rem;">
+                <button onclick="generateSchedule()" style="padding:.6rem 1.5rem;border-radius:8px;border:none;background:var(--accent);color:var(--bg);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;">Generate Schedule</button>
+            </div>
+        </div>
+
+        <!-- Generated Timeline -->
+        <div id="scheduleOutput" style="display:none;">
+            <div id="scheduleTimeline"></div>
+            <div id="scheduleTable" style="margin-top:1.5rem;"></div>
+            <div id="scheduleActions" style="margin-top:1.5rem;"></div>
+        </div>
+    </div>
+
+    <!-- Rollback Strategy -->
+    <div class="card">
+        <h2>🔙 Rollback &amp; Recovery Strategy</h2>
+        <table>
+            <tr><th>Scenario</th><th>Detection</th><th>Response</th><th>RTO</th></tr>
+            <tr><td>Pods fail to schedule on green pool</td><td>kubectl get pods (Pending)</td><td>Uncordon blue nodes; investigate taints/affinity</td><td>&lt; 5 min</td></tr>
+            <tr><td>Application errors spike post-drain</td><td>Grafana error rate alert &gt;1%</td><td>Uncordon blue; redirect traffic; investigate</td><td>&lt; 10 min</td></tr>
+            <tr><td>Add-on CRDs broken after control plane upgrade</td><td>cert-manager/ingress logs</td><td>Re-apply CRDs; upgrade add-on; escalate to AKS support</td><td>&lt; 30 min</td></tr>
+            <tr><td>Complete green pool failure</td><td>All pods NotReady on green</td><td>Uncordon + undrain blue immediately; abort upgrade</td><td>&lt; 15 min</td></tr>
+        </table>
+        <div class="flow" style="margin-top:1rem;">
+            <div class="flow-box accent">Detect Issue</div>
+            <span class="flow-arr">→</span>
+            <div class="flow-box orange">Uncordon Blue</div>
+            <span class="flow-arr">→</span>
+            <div class="flow-box green">Verify Blue Health</div>
+            <span class="flow-arr">→</span>
+            <div class="flow-box purple">Root Cause Analysis</div>
+            <span class="flow-arr">→</span>
+            <div class="flow-box accent">Reschedule Upgrade</div>
+        </div>
+    </div>
+
+    <!-- Automated Upgrade Channels -->
+    <div class="card">
+        <h2>⚙️ AKS Auto-Upgrade Channels</h2>
+        <table>
+            <tr><th>Channel</th><th>Behavior</th><th>Recommended For</th><th>Risk</th></tr>
+            <tr><td><b>none</b></td><td>Manual upgrades only</td><td><span class="badge green">Production ✅</span></td><td><span class="badge green">Lowest</span> (full control)</td></tr>
+            <tr><td><b>patch</b></td><td>Auto-apply patch versions (1.33.x)</td><td>Staging / Pre-prod</td><td><span class="badge blue">Low</span></td></tr>
+            <tr><td><b>stable</b></td><td>Auto-upgrade to N-1 minor</td><td>Dev / Test</td><td><span class="badge orange">Medium</span></td></tr>
+            <tr><td><b>rapid</b></td><td>Auto-upgrade to latest GA minor</td><td>Sandbox only</td><td><span class="badge red">High</span></td></tr>
+            <tr><td><b>node-image</b></td><td>Auto-update node OS image weekly</td><td>All environments</td><td><span class="badge blue">Low</span></td></tr>
+        </table>
+        <div class="code"><span class="comment"># Current setting (recommended for production)</span>
+az aks update -g <span class="string">rg-aks-store-demo</span> -n <span class="string">aks-store-demo</span> \
+  --auto-upgrade-channel <span class="keyword">none</span> \
+  --node-os-upgrade-channel <span class="keyword">NodeImage</span>
+
+<span class="comment"># Maintenance window — Tuesdays 06:00 UTC, 4-hour window</span>
+az aks maintenanceconfiguration add -g <span class="string">rg-aks-store-demo</span> --cluster-name <span class="string">aks-store-demo</span> \
+  --name <span class="keyword">default</span> \
+  --weekday <span class="string">Tuesday</span> --start-hour <span class="keyword">6</span> --duration <span class="keyword">4</span></div>
+    </div>
+
+</div>
+
 </div><!-- /main -->
 
 <script>
+// Nav handler
 document.getElementById('mainNav').addEventListener('click', e => {
     if (e.target.tagName === 'BUTTON') {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1109,6 +1348,119 @@ document.getElementById('mainNav').addEventListener('click', e => {
         e.target.classList.add('active');
     }
 });
+
+// === Schedule Planner Logic ===
+function generateSchedule() {
+    const input = document.getElementById('deployDate').value;
+    const targetVersion = document.getElementById('upgradeTarget').value;
+    if (!input) { alert('Please select a target deployment date.'); return; }
+
+    const deploy = new Date(input + 'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Milestone definitions (weeks before deploy day)
+    const milestones = [
+        { id: 'discovery',     label: '🔍 Discovery & Analysis',          weeksB: 8,  duration: 2, color: '#818cf8',
+          tasks: ['Review K8s ' + targetVersion + ' changelog & release notes','Run pluto detect-all-in-cluster for deprecated APIs','Check NGINX Ingress / cert-manager compatibility matrix','Review CVEs fixed in target release','Capacity planning — verify node pool sizing is sufficient','Identify any custom admission webhooks affected','Submit Change Advisory Board (CAB) request'] },
+        { id: 'preparation',   label: '🛠️ Preparation',                   weeksB: 6,  duration: 2, color: '#38bdf8',
+          tasks: ['Update Helm chart values for target K8s version','Update Dockerfiles if base image changes needed','Pin add-on versions (NGINX Ingress, cert-manager) for target','Update PodDisruptionBudgets if needed','Update Network Policies for any new API changes','Prepare rollback runbook with exact commands','Update CI/CD pipelines with new K8s version tests','Upgrade kubectl locally to match target version'] },
+        { id: 'staging',       label: '🧪 Staging Upgrade & Validation', weeksB: 4,  duration: 1, color: '#34d399',
+          tasks: ['Upgrade staging AKS control plane to ' + targetVersion,'Add green node pool in staging','Drain blue nodes in staging','Run full integration test suite','Run load test at 50% production scale','Validate monitoring & alerting in staging','Validate Ingress TLS certificates renew correctly'] },
+        { id: 'testing',       label: '🏋️ Extended Soak Testing',         weeksB: 3,  duration: 1, color: '#fb923c',
+          tasks: ['Run staging at target version for ≥ 7 days','Monitor error rates, latency P99, pod restarts','Validate autoscaling behaviour under load','Test DR/backup procedures on upgraded cluster','Verify all CronJobs and batch processes run correctly','Sign-off from QA and application owners'] },
+        { id: 'freeze',        label: '🧊 Change Freeze & Pre-Deploy',   weeksB: 2,  duration: 1, color: '#f87171',
+          tasks: ['Initiate code freeze — no new deployments to production','Take etcd snapshot / backup','Verify AKS maintenance window is configured','Send upgrade notification to all stakeholders','Prepare war room / communication channel','Final CAB approval for production upgrade'] },
+        { id: 'deploy',        label: '🚀 Production Deploy',             weeksB: 0,  duration: 0, color: '#34d399',
+          tasks: ['Upgrade production control plane: az aks upgrade --control-plane-only -k ' + targetVersion,'Add green node pool (3× Standard_DS2_v2, K8s ' + targetVersion + ')','Cordon blue nodes: kubectl cordon -l agentpool=nodepool1','Drain blue nodes (respecting PDBs)','Run smoke tests on all namespaces (ehr, pets)','Verify Ingress (20.175.132.82), API health, Portal access','Monitor for 2 hours — if green, delete old node pool'] },
+        { id: 'postdeploy',    label: '📊 Post-Upgrade Validation',      weeksB: -1, duration: 2, color: '#a78bfa',
+          tasks: ['Monitor SLOs for 72 hours (error rate, latency, availability)','Verify autoscaling triggers correctly','Check cert-manager certificate renewal cycle','Validate Grafana dashboards show correct data','Update architecture docs with new version','Close change ticket and send completion notice','Conduct retrospective — document lessons learned'] },
+    ];
+
+    // Calculate dates
+    const phases = milestones.map(m => {
+        const start = new Date(deploy);
+        start.setDate(start.getDate() - (m.weeksB * 7));
+        const end = new Date(start);
+        end.setDate(end.getDate() + (m.duration * 7));
+        const isPast = start < today;
+        const isOverdue = end < today && m.weeksB > 0;
+        return { ...m, start, end, isPast, isOverdue };
+    });
+
+    const daysUntilDeploy = Math.ceil((deploy - today) / 86400000);
+    const firstPhaseStart = phases[0].start;
+    const daysUntilStart = Math.ceil((firstPhaseStart - today) / 86400000);
+
+    // Urgency banner
+    let urgency = '';
+    if (daysUntilDeploy < 0) {
+        urgency = '<div style="background:rgba(248,113,113,.15);border:1px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--red);">⚠️ Selected date is in the past!</b> <span style="color:var(--muted);">Please choose a future date.</span></div>';
+    } else if (daysUntilStart < 0) {
+        urgency = '<div style="background:rgba(248,113,113,.15);border:1px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--red);">🚨 Planning should have started ' + Math.abs(daysUntilStart) + ' days ago!</b> <span style="color:var(--muted);">You are behind schedule. Begin Discovery phase immediately.</span></div>';
+    } else if (daysUntilStart <= 7) {
+        urgency = '<div style="background:rgba(251,146,60,.15);border:1px solid var(--orange);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--orange);">⚡ Planning starts in ' + daysUntilStart + ' days.</b> <span style="color:var(--muted);">Begin preparing resources and scheduling the CAB review now.</span></div>';
+    } else {
+        urgency = '<div style="background:rgba(52,211,153,.15);border:1px solid var(--green);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--green);">✅ You have ' + daysUntilDeploy + ' days until deployment.</b> <span style="color:var(--muted);">Planning begins in ' + daysUntilStart + ' days (' + fmtDate(firstPhaseStart) + ').</span></div>';
+    }
+
+    // Visual timeline
+    let timelineHtml = urgency;
+    timelineHtml += '<div style="display:flex;flex-direction:column;gap:.75rem;">';
+    phases.forEach(p => {
+        const overdue = p.isOverdue ? 'opacity:.6;' : '';
+        const marker = p.id === 'deploy' ? '🚀' : '';
+        timelineHtml += '<div style="display:flex;align-items:stretch;gap:1rem;' + overdue + '">';
+        timelineHtml += '<div style="width:140px;text-align:right;flex-shrink:0;padding-top:.5rem;">';
+        timelineHtml += '<div style="font-size:.8rem;font-weight:700;color:' + p.color + ';">' + fmtDate(p.start) + '</div>';
+        if (p.duration > 0) timelineHtml += '<div style="font-size:.7rem;color:var(--muted);">→ ' + fmtDate(p.end) + '</div>';
+        timelineHtml += '</div>';
+        timelineHtml += '<div style="width:4px;background:' + p.color + ';border-radius:2px;flex-shrink:0;position:relative;">';
+        timelineHtml += '<div style="position:absolute;top:8px;left:-5px;width:14px;height:14px;border-radius:50%;background:' + p.color + ';border:2px solid var(--bg);"></div>';
+        timelineHtml += '</div>';
+        timelineHtml += '<div style="background:var(--surface2);border:1px solid ' + p.color + '30;border-radius:10px;padding:.75rem 1rem;flex:1;">';
+        timelineHtml += '<div style="font-weight:700;color:' + p.color + ';margin-bottom:.4rem;">' + marker + ' ' + p.label;
+        if (p.isOverdue) timelineHtml += ' <span class="badge red" style="margin-left:.5rem;">OVERDUE</span>';
+        else if (p.isPast && p.weeksB > 0) timelineHtml += ' <span class="badge orange" style="margin-left:.5rem;">IN PROGRESS</span>';
+        timelineHtml += '</div>';
+        timelineHtml += '<ul style="color:var(--muted);font-size:.82rem;margin:0;padding-left:1.2rem;columns:' + (p.tasks.length > 4 ? '2' : '1') + ';column-gap:2rem;">';
+        p.tasks.forEach(t => timelineHtml += '<li style="margin:.2rem 0;break-inside:avoid;">' + t + '</li>');
+        timelineHtml += '</ul></div></div>';
+    });
+    timelineHtml += '</div>';
+
+    // Summary table
+    let tableHtml = '<h3 style="color:var(--accent2);margin-bottom:.5rem;">📋 Schedule Summary</h3>';
+    tableHtml += '<table><tr><th>Phase</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Status</th></tr>';
+    phases.forEach(p => {
+        let status = '<span class="badge blue">Scheduled</span>';
+        if (p.isOverdue) status = '<span class="badge red">Overdue</span>';
+        else if (p.isPast && p.weeksB > 0) status = '<span class="badge orange">Should be active</span>';
+        const dur = p.duration === 0 ? '1 day' : p.duration + ' week' + (p.duration > 1 ? 's' : '');
+        tableHtml += '<tr><td>' + p.label + '</td><td>' + fmtDate(p.start) + '</td><td>' + (p.duration > 0 ? fmtDate(p.end) : fmtDate(p.start)) + '</td><td>' + dur + '</td><td>' + status + '</td></tr>';
+    });
+    tableHtml += '</table>';
+
+    // Key dates callout
+    let actionsHtml = '<div class="grid-3">';
+    actionsHtml += '<div class="stat" style="border:1px solid var(--accent);"><div class="num" style="font-size:1.3rem;">' + fmtDate(phases[0].start) + '</div><div class="label">📅 Start Planning</div></div>';
+    actionsHtml += '<div class="stat" style="border:1px solid var(--orange);"><div class="num" style="font-size:1.3rem;color:var(--orange);">' + fmtDate(phases[4].start) + '</div><div class="label">🧊 Change Freeze</div></div>';
+    actionsHtml += '<div class="stat" style="border:1px solid var(--green);"><div class="num" style="font-size:1.3rem;color:var(--green);">' + fmtDate(deploy) + '</div><div class="label">🚀 Production Deploy</div></div>';
+    actionsHtml += '</div>';
+
+    document.getElementById('scheduleTimeline').innerHTML = timelineHtml;
+    document.getElementById('scheduleTable').innerHTML = tableHtml;
+    document.getElementById('scheduleActions').innerHTML = actionsHtml;
+    document.getElementById('scheduleOutput').style.display = 'block';
+    document.getElementById('scheduleOutput').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fmtDate(d) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+// Set default deploy date to 10 weeks from now
+const defDate = new Date();
+defDate.setDate(defDate.getDate() + 70);
+document.getElementById('deployDate').value = defDate.toISOString().split('T')[0];
 </script>
-</body>
-</html>
