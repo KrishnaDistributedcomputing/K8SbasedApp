@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K8s Upgrade Schedule Planner — EHR Platform</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#164e63 100%);padding:2rem 3rem;border-bottom:1px solid var(--border);}
+.header h1{font-size:2rem;font-weight:700;display:flex;align-items:center;gap:.75rem;}
+.header .subtitle{color:var(--muted);font-size:1rem;margin-top:.25rem;}
+.header .meta{display:flex;gap:2rem;margin-top:1rem;flex-wrap:wrap;align-items:center;}
+.header .meta span{color:var(--muted);font-size:.85rem;}
+.header .meta span b{color:var(--accent);}
+.back-link{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .8rem;border-radius:6px;border:1px solid var(--border);color:var(--accent);font-size:.85rem;transition:all .2s;}
+.back-link:hover{background:rgba(56,189,248,.1);text-decoration:none;}
+
+.main{max-width:1400px;margin:0 auto;padding:2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
+.card h2{font-size:1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.card h3{font-size:1.05rem;margin:1.25rem 0 .75rem;color:var(--accent2);}
+
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:1.5rem;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;}
+
+table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.9rem;}
+th{background:var(--surface2);color:var(--accent);padding:.6rem .8rem;text-align:left;font-weight:600;border-bottom:2px solid var(--border);}
+td{padding:.6rem .8rem;border-bottom:1px solid rgba(71,85,105,.4);}
+tr:hover td{background:rgba(56,189,248,.03);}
+
+.stat{background:var(--surface2);border-radius:10px;padding:1rem 1.25rem;text-align:center;}
+.stat .num{font-size:1.8rem;font-weight:700;color:var(--accent);}
+.stat .label{font-size:.8rem;color:var(--muted);margin-top:.25rem;}
+
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:600;}
+.badge.blue{background:rgba(56,189,248,.15);color:var(--accent);}
+.badge.green{background:rgba(52,211,153,.15);color:var(--green);}
+.badge.orange{background:rgba(251,146,60,.15);color:var(--orange);}
+.badge.red{background:rgba(248,113,113,.15);color:var(--red);}
+.badge.purple{background:rgba(167,139,250,.15);color:var(--purple);}
+
+.input-row{display:flex;align-items:flex-end;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.input-group label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:.25rem;}
+.input-group input,.input-group select{padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--accent);font-size:1rem;font-weight:600;cursor:pointer;}
+.btn-primary{padding:.65rem 2rem;border-radius:8px;border:none;background:var(--accent);color:var(--bg);font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);}
+.btn-export{padding:.5rem 1.2rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.8rem;cursor:pointer;transition:all .2s;}
+.btn-export:hover{background:var(--surface);border-color:var(--accent);}
+
+.timeline-phase{display:flex;align-items:stretch;gap:1rem;margin-bottom:.75rem;}
+.timeline-date{width:150px;text-align:right;flex-shrink:0;padding-top:.5rem;}
+.timeline-date .date{font-size:.8rem;font-weight:700;}
+.timeline-date .end{font-size:.7rem;color:var(--muted);}
+.timeline-bar{width:4px;border-radius:2px;flex-shrink:0;position:relative;}
+.timeline-dot{position:absolute;top:8px;left:-5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
+.timeline-content{border:1px solid;border-radius:10px;padding:.75rem 1rem;flex:1;}
+.timeline-content .title{font-weight:700;margin-bottom:.4rem;}
+.timeline-content ul{color:var(--muted);font-size:.82rem;margin:0;padding-left:1.2rem;column-gap:2rem;}
+.timeline-content li{margin:.2rem 0;break-inside:avoid;}
+
+/* Calendar mini-view */
+.cal-strip{display:flex;gap:2px;margin:1rem 0;overflow-x:auto;padding:.5rem 0;}
+.cal-week{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.cal-week .wk-label{font-size:.55rem;color:var(--muted);margin-bottom:2px;}
+.cal-day{width:18px;height:18px;border-radius:3px;background:var(--surface2);border:1px solid transparent;position:relative;}
+.cal-day.today{border-color:var(--accent);box-shadow:0 0 4px rgba(56,189,248,.4);}
+.cal-day[title]:hover{cursor:pointer;filter:brightness(1.3);}
+
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}.header{padding:1.5rem 1rem;}.main{padding:1rem;}.timeline-date{width:100px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📅 K8s Upgrade Schedule Planner</h1>
+    <div class="subtitle">Select a target deployment date and get a complete planning timeline with milestones</div>
+    <div class="meta">
+        <a href="/" class="back-link">← Back to Architecture Docs</a>
+        <span>☸️ Current: <b>Kubernetes 1.33</b></span>
+        <span>📍 Cluster: <b>aks-store-demo</b></span>
+        <span>📍 Region: <b>Canada Central</b></span>
+    </div>
+</div>
+
+<div class="main">
+
+    <!-- Quick Links -->
+    <div class="card">
+        <h2>🔗 Platform Quick Links</h2>
+        <div class="grid-4">
+            <div class="stat" style="text-align:left;padding:.75rem 1rem;">
+                <div style="font-size:.9rem;margin-bottom:.3rem;">🏥 EHR Portal</div>
+                <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank" style="font-size:.8rem;">Open Portal →</a>
+            </div>
+            <div class="stat" style="text-align:left;padding:.75rem 1rem;">
+                <div style="font-size:.9rem;margin-bottom:.3rem;">⚙️ EHR API</div>
+                <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" style="font-size:.8rem;">Swagger UI →</a>
+            </div>
+            <div class="stat" style="text-align:left;padding:.75rem 1rem;">
+                <div style="font-size:.9rem;margin-bottom:.3rem;">💰 Costing</div>
+                <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank" style="font-size:.8rem;">Dashboard →</a>
+            </div>
+            <div class="stat" style="text-align:left;padding:.75rem 1rem;">
+                <div style="font-size:.9rem;margin-bottom:.3rem;">🏗️ Architecture</div>
+                <a href="https://ehr-architecture-canadacentral.azurewebsites.net" target="_blank" style="font-size:.8rem;">Docs →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Section -->
+    <div class="card">
+        <h2>🎯 Configure Upgrade</h2>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="deployDate">🎯 Target Production Deploy Date</label>
+                <input type="date" id="deployDate">
+            </div>
+            <div class="input-group">
+                <label for="upgradeTarget">☸️ Target K8s Version</label>
+                <select id="upgradeTarget">
+                    <option value="1.34">1.34 (Next GA)</option>
+                    <option value="1.35">1.35 (Preview)</option>
+                    <option value="1.36">1.36 (Future)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="nodeCount">🖥️ Node Count</label>
+                <select id="nodeCount">
+                    <option value="3" selected>3 nodes</option>
+                    <option value="5">5 nodes</option>
+                    <option value="7">7 nodes</option>
+                    <option value="10">10 nodes</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="vmSize">💾 VM Size</label>
+                <select id="vmSize">
+                    <option value="Standard_DS2_v2" selected>Standard_DS2_v2 (2c/7GB)</option>
+                    <option value="Standard_D4s_v3">Standard_D4s_v3 (4c/16GB)</option>
+                    <option value="Standard_D8s_v3">Standard_D8s_v3 (8c/32GB)</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn-primary" onclick="generateSchedule()">Generate Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HeatMap Calendar -->
+    <div class="card" id="calCard" style="display:none;">
+        <h2>🗓️ Upgrade Timeline Heatmap</h2>
+        <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Each cell = 1 day. Colors indicate phase activity.</p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.75rem;">
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#818cf8;vertical-align:middle;"></span> Discovery</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#38bdf8;vertical-align:middle;"></span> Preparation</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#34d399;vertical-align:middle;"></span> Staging</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#fb923c;vertical-align:middle;"></span> Soak Test</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#f87171;vertical-align:middle;"></span> Freeze</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#22c55e;vertical-align:middle;"></span> Deploy</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#a78bfa;vertical-align:middle;"></span> Post-Upgrade</span>
+        </div>
+        <div id="calStrip" class="cal-strip"></div>
+    </div>
+
+    <!-- Output Section -->
+    <div id="scheduleOutput" style="display:none;">
+        <!-- Key Dates -->
+        <div class="card" id="keyDatesCard"></div>
+
+        <!-- Urgency Banner -->
+        <div id="urgencyBanner"></div>
+
+        <!-- Visual Timeline -->
+        <div class="card">
+            <h2>📊 Phased Timeline</h2>
+            <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-bottom:1rem;">
+                <button class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
+                <button class="btn-export" onclick="copyText()">📋 Copy Summary</button>
+            </div>
+            <div id="scheduleTimeline"></div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="card">
+            <div id="scheduleTable"></div>
+        </div>
+
+        <!-- Generated AZ CLI Commands -->
+        <div class="card">
+            <h2>🖥️ Generated CLI Commands</h2>
+            <p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;">Copy-paste these commands on deploy day. Parameterized with your selections.</p>
+            <div id="cliCommands" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'Cascadia Code','Fira Code',monospace;font-size:.8rem;overflow-x:auto;white-space:pre;color:var(--green);"></div>
+        </div>
+    </div>
+
+    <!-- AKS Version Lifecycle Reference -->
+    <div class="card">
+        <h2>📅 AKS Version Lifecycle Reference</h2>
+        <table>
+            <tr><th>K8s Version</th><th>AKS GA (Est.)</th><th>End-of-Life (Est.)</th><th>Upgrade To</th><th>Status</th></tr>
+            <tr><td><b>1.31</b></td><td>Oct 2024</td><td>Oct 2025</td><td>→ 1.32 / 1.33</td><td><span class="badge red">EOL</span></td></tr>
+            <tr><td><b>1.32</b></td><td>Feb 2025</td><td>Feb 2026</td><td>→ 1.33 / 1.34</td><td><span class="badge red">EOL</span></td></tr>
+            <tr><td><b>1.33</b></td><td>Jun 2025</td><td>Jun 2026</td><td>→ 1.34</td><td><span class="badge green">Current ✅</span></td></tr>
+            <tr><td><b>1.34</b></td><td>Oct 2025</td><td>Oct 2026</td><td>→ 1.35</td><td><span class="badge blue">Next Target</span></td></tr>
+            <tr><td><b>1.35</b></td><td>Feb 2026</td><td>Feb 2027</td><td>→ 1.36</td><td><span class="badge purple">Preview</span></td></tr>
+        </table>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:.5rem;">
+            ⚠️ Dates are estimated. Check <a href="https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions" target="_blank">AKS supported versions</a> for official dates.
+        </p>
+    </div>
+
+    <!-- Component Compatibility -->
+    <div class="card">
+        <h2>🧩 Component Compatibility Matrix</h2>
+        <table>
+            <tr><th>Component</th><th>Current</th><th>K8s 1.33 ✅</th><th>K8s 1.34</th><th>K8s 1.35</th><th>Action</th></tr>
+            <tr><td><b>NGINX Ingress</b></td><td>v1.12.0</td><td><span class="badge green">✓</span></td><td><span class="badge orange">Check</span></td><td><span class="badge orange">Check</span></td><td>Review chart ≥ 4.12</td></tr>
+            <tr><td><b>cert-manager</b></td><td>v1.17.1</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge orange">Check</span></td><td>Validate CRD APIs</td></tr>
+            <tr><td><b>Azure CNI</b></td><td>Latest</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td>Managed by AKS</td></tr>
+            <tr><td><b>CoreDNS</b></td><td>Managed</td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td><span class="badge green">✓</span></td><td>Managed by AKS</td></tr>
+            <tr><td><b>kubectl</b></td><td>v1.33</td><td><span class="badge green">✓</span></td><td><span class="badge orange">Upgrade</span></td><td><span class="badge orange">Upgrade</span></td><td>Keep within ±1</td></tr>
+        </table>
+    </div>
+
+</div>
+
+<script>
+const milestonesDef = [
+    { id:'discovery',   label:'🔍 Discovery & Analysis',        weeksB:8, duration:2, color:'#818cf8' },
+    { id:'preparation', label:'🛠️ Preparation',                  weeksB:6, duration:2, color:'#38bdf8' },
+    { id:'staging',     label:'🧪 Staging Upgrade & Validation', weeksB:4, duration:1, color:'#34d399' },
+    { id:'testing',     label:'🏋️ Extended Soak Testing',        weeksB:3, duration:1, color:'#fb923c' },
+    { id:'freeze',      label:'🧊 Change Freeze & Pre-Deploy',  weeksB:2, duration:1, color:'#f87171' },
+    { id:'deploy',      label:'🚀 Production Deploy',            weeksB:0, duration:0, color:'#22c55e' },
+    { id:'postdeploy',  label:'📊 Post-Upgrade Validation',     weeksB:-1,duration:2, color:'#a78bfa' },
+];
+
+function getTasks(targetVersion, nodeCount, vmSize) {
+    return {
+        discovery: ['Review K8s '+targetVersion+' changelog & release notes','Run pluto detect-all-in-cluster for deprecated APIs','Check NGINX Ingress / cert-manager compatibility matrix','Review CVEs fixed in target release','Capacity planning — verify node pool sizing ('+nodeCount+'× '+vmSize+')','Identify any custom admission webhooks affected','Submit Change Advisory Board (CAB) request'],
+        preparation: ['Update Helm chart values for target K8s version','Update Dockerfiles if base image changes needed','Pin add-on versions (NGINX Ingress, cert-manager) for target','Update PodDisruptionBudgets if needed','Update Network Policies for any new API changes','Prepare rollback runbook with exact commands','Update CI/CD pipelines with new K8s version tests','Upgrade kubectl locally to match target version'],
+        staging: ['Upgrade staging AKS control plane to '+targetVersion,'Add green node pool in staging ('+nodeCount+'× '+vmSize+')','Drain blue nodes in staging','Run full integration test suite','Run load test at 50% production scale','Validate monitoring & alerting in staging','Validate Ingress TLS certificates renew correctly'],
+        testing: ['Run staging at target version for ≥ 7 days','Monitor error rates, latency P99, pod restarts','Validate autoscaling behaviour under load','Test DR/backup procedures on upgraded cluster','Verify all CronJobs and batch processes run correctly','Sign-off from QA and application owners'],
+        freeze: ['Initiate code freeze — no new deployments to production','Take etcd snapshot / backup','Verify AKS maintenance window is configured','Send upgrade notification to all stakeholders','Prepare war room / communication channel','Final CAB approval for production upgrade'],
+        deploy: ['Upgrade production control plane: az aks upgrade --control-plane-only -k '+targetVersion,'Add green node pool ('+nodeCount+'× '+vmSize+', K8s '+targetVersion+')','Cordon blue nodes: kubectl cordon -l agentpool=nodepool1','Drain blue nodes (respecting PDBs)','Run smoke tests on all namespaces (ehr, pets)','Verify Ingress (20.175.132.82), API health, Portal access','Monitor for 2 hours — if green, delete old node pool'],
+        postdeploy: ['Monitor SLOs for 72 hours (error rate, latency, availability)','Verify autoscaling triggers correctly','Check cert-manager certificate renewal cycle','Validate Grafana dashboards show correct data','Update architecture docs with new version','Close change ticket and send completion notice','Conduct retrospective — document lessons learned'],
+    };
+}
+
+let lastPhases = [];
+let lastDeploy = null;
+
+function generateSchedule() {
+    const input = document.getElementById('deployDate').value;
+    const targetVersion = document.getElementById('upgradeTarget').value;
+    const nodeCount = document.getElementById('nodeCount').value;
+    const vmSize = document.getElementById('vmSize').value;
+    if (!input) { alert('Please select a target deployment date.'); return; }
+
+    const deploy = new Date(input + 'T00:00:00');
+    lastDeploy = deploy;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const tasks = getTasks(targetVersion, nodeCount, vmSize);
+
+    const phases = milestonesDef.map(m => {
+        const start = new Date(deploy); start.setDate(start.getDate() - (m.weeksB * 7));
+        const end = new Date(start); end.setDate(end.getDate() + (m.duration * 7));
+        return { ...m, start, end, tasks: tasks[m.id], isPast: start < today, isOverdue: end < today && m.weeksB > 0 };
+    });
+    lastPhases = phases;
+
+    const daysUntilDeploy = Math.ceil((deploy - today) / 86400000);
+    const firstStart = phases[0].start;
+    const daysUntilStart = Math.ceil((firstStart - today) / 86400000);
+
+    // Key dates
+    document.getElementById('keyDatesCard').innerHTML = '<h2>🎯 Key Dates</h2><div class="grid-4">' +
+        '<div class="stat" style="border:1px solid #818cf8;"><div class="num" style="font-size:1.2rem;color:#818cf8;">'+fmtDate(phases[0].start)+'</div><div class="label">📅 Start Planning</div></div>' +
+        '<div class="stat" style="border:1px solid #34d399;"><div class="num" style="font-size:1.2rem;color:#34d399;">'+fmtDate(phases[2].start)+'</div><div class="label">🧪 Staging Upgrade</div></div>' +
+        '<div class="stat" style="border:1px solid #f87171;"><div class="num" style="font-size:1.2rem;color:#f87171;">'+fmtDate(phases[4].start)+'</div><div class="label">🧊 Change Freeze</div></div>' +
+        '<div class="stat" style="border:1px solid #22c55e;"><div class="num" style="font-size:1.2rem;color:#22c55e;">'+fmtDate(deploy)+'</div><div class="label">🚀 Production Deploy</div></div>' +
+        '</div>';
+
+    // Urgency banner
+    let ub = '';
+    if (daysUntilDeploy < 0)
+        ub = '<div class="card" style="border-color:var(--red);background:rgba(248,113,113,.08);"><b style="color:var(--red);">⚠️ Selected date is in the past!</b> <span style="color:var(--muted);">Please choose a future date.</span></div>';
+    else if (daysUntilStart < 0)
+        ub = '<div class="card" style="border-color:var(--red);background:rgba(248,113,113,.08);"><b style="color:var(--red);">🚨 Planning should have started '+Math.abs(daysUntilStart)+' days ago!</b> <span style="color:var(--muted);">Begin Discovery phase immediately.</span></div>';
+    else if (daysUntilStart <= 7)
+        ub = '<div class="card" style="border-color:var(--orange);background:rgba(251,146,60,.08);"><b style="color:var(--orange);">⚡ Planning starts in '+daysUntilStart+' days.</b> <span style="color:var(--muted);">Begin preparing resources and scheduling the CAB review now.</span></div>';
+    else
+        ub = '<div class="card" style="border-color:var(--green);background:rgba(52,211,153,.08);"><b style="color:var(--green);">✅ '+daysUntilDeploy+' days until deployment.</b> <span style="color:var(--muted);">Planning begins in '+daysUntilStart+' days ('+fmtDate(firstStart)+').</span></div>';
+    document.getElementById('urgencyBanner').innerHTML = ub;
+
+    // Timeline
+    let tl = '';
+    phases.forEach(p => {
+        const ov = p.isOverdue ? 'opacity:.6;' : '';
+        const mk = p.id === 'deploy' ? '🚀 ' : '';
+        tl += '<div class="timeline-phase" style="'+ov+'">';
+        tl += '<div class="timeline-date"><div class="date" style="color:'+p.color+';">'+fmtDate(p.start)+'</div>';
+        if (p.duration > 0) tl += '<div class="end">→ '+fmtDate(p.end)+'</div>';
+        tl += '</div>';
+        tl += '<div class="timeline-bar" style="background:'+p.color+';"><div class="timeline-dot" style="background:'+p.color+';"></div></div>';
+        tl += '<div class="timeline-content" style="background:var(--surface2);border-color:'+p.color+'30;">';
+        tl += '<div class="title" style="color:'+p.color+';">'+mk+p.label;
+        if (p.isOverdue) tl += ' <span class="badge red" style="margin-left:.5rem;">OVERDUE</span>';
+        else if (p.isPast && p.weeksB > 0) tl += ' <span class="badge orange" style="margin-left:.5rem;">IN PROGRESS</span>';
+        tl += '</div>';
+        const cols = p.tasks.length > 4 ? 'columns:2;' : '';
+        tl += '<ul style="'+cols+'">'; p.tasks.forEach(t => tl += '<li>'+t+'</li>'); tl += '</ul>';
+        tl += '</div></div>';
+    });
+    document.getElementById('scheduleTimeline').innerHTML = tl;
+
+    // Summary table
+    let tb = '<h2>📋 Schedule Summary</h2><table><tr><th>Phase</th><th>Start</th><th>End</th><th>Duration</th><th>Status</th></tr>';
+    phases.forEach(p => {
+        let st = '<span class="badge blue">Scheduled</span>';
+        if (p.isOverdue) st = '<span class="badge red">Overdue</span>';
+        else if (p.isPast && p.weeksB > 0) st = '<span class="badge orange">Should be active</span>';
+        const dur = p.duration === 0 ? '1 day' : p.duration+' week'+(p.duration>1?'s':'');
+        tb += '<tr><td>'+p.label+'</td><td>'+fmtDate(p.start)+'</td><td>'+(p.duration>0?fmtDate(p.end):fmtDate(p.start))+'</td><td>'+dur+'</td><td>'+st+'</td></tr>';
+    });
+    tb += '</table>';
+    document.getElementById('scheduleTable').innerHTML = tb;
+
+    // CLI Commands
+    document.getElementById('cliCommands').innerHTML =
+        '<span style="color:#94a3b8;"># ===== DEPLOY DAY: '+fmtDate(deploy)+' =====</span>\n\n' +
+        '<span style="color:#94a3b8;"># Step 1: Upgrade Control Plane</span>\n' +
+        'az aks upgrade -g <span style="color:#fb923c;">rg-aks-store-demo</span> -n <span style="color:#fb923c;">aks-store-demo</span> \\\n' +
+        '  --kubernetes-version <span style="color:#38bdf8;">'+targetVersion+'</span> --control-plane-only\n\n' +
+        '<span style="color:#94a3b8;"># Step 2: Add Green Node Pool</span>\n' +
+        'az aks nodepool add -g <span style="color:#fb923c;">rg-aks-store-demo</span> --cluster-name <span style="color:#fb923c;">aks-store-demo</span> \\\n' +
+        '  --name <span style="color:#fb923c;">green'+(targetVersion.replace('.',''))+'</span> --node-count <span style="color:#38bdf8;">'+nodeCount+'</span> \\\n' +
+        '  --node-vm-size <span style="color:#38bdf8;">'+vmSize+'</span> \\\n' +
+        '  --kubernetes-version <span style="color:#38bdf8;">'+targetVersion+'</span> --max-pods <span style="color:#38bdf8;">250</span>\n\n' +
+        '<span style="color:#94a3b8;"># Step 3: Cordon Old Nodes</span>\n' +
+        'kubectl cordon -l agentpool=<span style="color:#fb923c;">nodepool1</span>\n\n' +
+        '<span style="color:#94a3b8;"># Step 4: Drain (respecting PDBs)</span>\n' +
+        'kubectl drain -l agentpool=<span style="color:#fb923c;">nodepool1</span> \\\n' +
+        '  --ignore-daemonsets --delete-emptydir-data --grace-period=<span style="color:#38bdf8;">60</span>\n\n' +
+        '<span style="color:#94a3b8;"># Step 5: Validate</span>\n' +
+        'kubectl get nodes -l agentpool=<span style="color:#fb923c;">green'+(targetVersion.replace('.',''))+'</span>\n' +
+        'kubectl get pods -n <span style="color:#fb923c;">ehr</span> -o wide\n' +
+        'kubectl get pods -n <span style="color:#fb923c;">pets</span> -o wide\n' +
+        'curl -s https://<span style="color:#fb923c;">ehr-api-canadacentral</span>.azurewebsites.net/health\n\n' +
+        '<span style="color:#94a3b8;"># Step 6: Delete Old Pool (after 2h soak)</span>\n' +
+        'az aks nodepool delete -g <span style="color:#fb923c;">rg-aks-store-demo</span> --cluster-name <span style="color:#fb923c;">aks-store-demo</span> \\\n' +
+        '  --name <span style="color:#fb923c;">nodepool1</span> --no-wait';
+
+    // Heatmap calendar
+    buildCalendar(phases, today, deploy);
+
+    document.getElementById('scheduleOutput').style.display = 'block';
+    document.getElementById('calCard').style.display = 'block';
+    document.getElementById('keyDatesCard').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function buildCalendar(phases, today, deploy) {
+    const earliest = new Date(phases[0].start);
+    const latest = new Date(phases[phases.length-1].end);
+    earliest.setDate(earliest.getDate() - (earliest.getDay())); // start on Sunday
+    latest.setDate(latest.getDate() + (6 - latest.getDay())); // end on Saturday
+
+    let html = '';
+    const cur = new Date(earliest);
+    let lastMonth = -1;
+    while (cur <= latest) {
+        const weekStart = new Date(cur);
+        const mon = cur.getMonth();
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const showLabel = mon !== lastMonth;
+        lastMonth = mon;
+        html += '<div class="cal-week">';
+        html += '<div class="wk-label">'+(showLabel?months[mon]:'')+'</div>';
+        for (let d = 0; d < 7; d++) {
+            const day = new Date(cur);
+            let bg = 'var(--surface2)';
+            let title = fmtDate(day);
+            for (const p of phases) {
+                if (day >= p.start && day <= p.end) { bg = p.color + '80'; title += ' — ' + p.label.replace(/[^\w\s&]/g,'').trim(); break; }
+            }
+            const isToday = day.toDateString() === today.toDateString();
+            const isDeploy = day.toDateString() === deploy.toDateString();
+            if (isDeploy) bg = '#22c55e';
+            html += '<div class="cal-day'+(isToday?' today':'')+'" style="background:'+bg+';" title="'+title+'"></div>';
+            cur.setDate(cur.getDate() + 1);
+        }
+        html += '</div>';
+    }
+    document.getElementById('calStrip').innerHTML = html;
+}
+
+function fmtDate(d) {
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+}
+
+function exportCSV() {
+    if (!lastPhases.length) return;
+    let csv = 'Phase,Start Date,End Date,Duration,Tasks\n';
+    lastPhases.forEach(p => {
+        const dur = p.duration === 0 ? '1 day' : p.duration+' weeks';
+        const label = p.label.replace(/[^\w\s&()-]/g,'').trim();
+        const tks = p.tasks.join('; ').replace(/,/g, ';');
+        csv += '"'+label+'","'+fmtDate(p.start)+'","'+(p.duration>0?fmtDate(p.end):fmtDate(p.start))+'","'+dur+'","'+tks+'"\n';
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'k8s-upgrade-schedule.csv'; a.click();
+    URL.revokeObjectURL(url);
+}
+
+function copyText() {
+    if (!lastPhases.length) return;
+    let txt = 'K8s Upgrade Schedule — Deploy: '+fmtDate(lastDeploy)+'\n';
+    txt += '='.repeat(50)+'\n\n';
+    lastPhases.forEach(p => {
+        const label = p.label.replace(/[^\w\s&()-]/g,'').trim();
+        txt += label+'\n  Start: '+fmtDate(p.start)+(p.duration>0?' → End: '+fmtDate(p.end):'')+'\n';
+        p.tasks.forEach(t => txt += '  • '+t+'\n');
+        txt += '\n';
+    });
+    navigator.clipboard.writeText(txt).then(() => alert('Schedule copied to clipboard!'));
+}
+
+// Set default date to 10 weeks from now
+const defDate = new Date(); defDate.setDate(defDate.getDate() + 70);
+document.getElementById('deployDate').value = defDate.toISOString().split('T')[0];
+</script>
+</body>
+</html>

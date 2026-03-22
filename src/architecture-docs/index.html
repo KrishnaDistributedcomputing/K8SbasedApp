@@ -227,21 +227,50 @@ tr:hover td{background:rgba(56,189,248,.03);}
 
     <div class="card">
         <h2>🔗 Live Application Links</h2>
-        <div class="grid-3">
+        <div class="grid-4">
             <div class="stat" style="text-align:left;">
-                <div style="font-size:1.2rem;margin-bottom:.5rem;">🏥 EHR Portal</div>
-                <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank">ehr-portal-canadacentral.azurewebsites.net</a><br>
-                <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-portal-canadacentral/appServices" target="_blank" class="azure-tag web" style="margin-top:.5rem;"><span class="badge">WEB</span> Portal on Azure</a>
+                <div style="font-size:1.1rem;margin-bottom:.5rem;">🏥 EHR Portal</div>
+                <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank" style="font-size:.85rem;">ehr-portal-canadacentral.azurewebsites.net</a><br>
+                <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">SPA + nginx reverse proxy · ehr-frontend:v3-webapp</span>
             </div>
             <div class="stat" style="text-align:left;">
-                <div style="font-size:1.2rem;margin-bottom:.5rem;">⚙️ EHR API</div>
-                <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank">Swagger UI</a><br>
-                <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-api-canadacentral/appServices" target="_blank" class="azure-tag web" style="margin-top:.5rem;"><span class="badge">WEB</span> API on Azure</a>
+                <div style="font-size:1.1rem;margin-bottom:.5rem;">⚙️ EHR API</div>
+                <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" style="font-size:.85rem;">Swagger UI</a> · <a href="https://ehr-api-canadacentral.azurewebsites.net/health" target="_blank" style="font-size:.85rem;">/health</a><br>
+                <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">ASP.NET Core 8 · ehr-api:v3</span>
             </div>
             <div class="stat" style="text-align:left;">
-                <div style="font-size:1.2rem;margin-bottom:.5rem;">💰 Costing Dashboard</div>
-                <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank">ehr-costing-canadacentral.azurewebsites.net</a><br>
-                <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-costing-canadacentral/appServices" target="_blank" class="azure-tag web" style="margin-top:.5rem;"><span class="badge">WEB</span> Costing on Azure</a>
+                <div style="font-size:1.1rem;margin-bottom:.5rem;">💰 Costing Dashboard</div>
+                <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank" style="font-size:.85rem;">ehr-costing-canadacentral.azurewebsites.net</a><br>
+                <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">Cost breakdown · costing-app:v1</span>
+            </div>
+            <div class="stat" style="text-align:left;">
+                <div style="font-size:1.1rem;margin-bottom:.5rem;">🏗️ Architecture Docs</div>
+                <a href="https://ehr-architecture-canadacentral.azurewebsites.net" target="_blank" style="font-size:.85rem;">ehr-architecture-canadacentral.azurewebsites.net</a><br>
+                <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">This document · architecture-docs:v3</span>
+            </div>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+            <div class="grid-4">
+                <div class="stat" style="text-align:left;">
+                    <div style="font-size:1.1rem;margin-bottom:.5rem;">📅 Upgrade Planner</div>
+                    <a href="/upgrade-planner.html" style="font-size:.85rem;">Open Upgrade Schedule Planner →</a><br>
+                    <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">Interactive K8s upgrade timeline generator</span>
+                </div>
+                <div class="stat" style="text-align:left;">
+                    <div style="font-size:1.1rem;margin-bottom:.5rem;">🐙 GitHub</div>
+                    <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" style="font-size:.85rem;">KrishnaDistributedcomputing/K8SbasedApp</a><br>
+                    <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">Source code repository</span>
+                </div>
+                <div class="stat" style="text-align:left;">
+                    <div style="font-size:1.1rem;margin-bottom:.5rem;">☸️ AKS Ingress</div>
+                    <a href="https://20.175.132.82" target="_blank" style="font-size:.85rem;">20.175.132.82</a><br>
+                    <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">NGINX Ingress · store-front, store-admin, ehr</span>
+                </div>
+                <div class="stat" style="text-align:left;">
+                    <div style="font-size:1.1rem;margin-bottom:.5rem;">🐘 PostgreSQL</div>
+                    <span style="font-size:.85rem;color:var(--muted);">ehrdb-canadacentral.postgres.database.azure.com</span><br>
+                    <span style="display:block;margin-top:.4rem;font-size:.75rem;color:var(--muted);">Standard_B2s · v16 · 32GB</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1257,35 +1286,11 @@ Each phase uses <span class="hl">dual-write + CDC</span> to maintain consistency
     --name <span class="hl2">nodepool1</span> --no-wait</div>
     </div>
 
-    <!-- ===== INTERACTIVE UPGRADE SCHEDULE CALENDAR ===== -->
-    <div class="card" id="upgrade-calendar-card">
+    <!-- Upgrade Schedule Planner Link -->
+    <div class="card" style="border-color:var(--accent);background:rgba(56,189,248,.03);">
         <h2>📅 Upgrade Schedule Planner</h2>
-        <p style="color:var(--muted);margin-bottom:1.25rem;">Select your target <b style="color:var(--accent);">production deployment date</b> and the planner will generate a complete timeline showing when each phase of preparation must begin.</p>
-
-        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
-            <div>
-                <label for="deployDate" style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:.25rem;">🎯 Target Production Deploy Date</label>
-                <input type="date" id="deployDate" style="padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--accent);font-size:1rem;font-weight:600;cursor:pointer;">
-            </div>
-            <div>
-                <label for="upgradeTarget" style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:.25rem;">☸️ Target K8s Version</label>
-                <select id="upgradeTarget" style="padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--accent);font-size:1rem;font-weight:600;cursor:pointer;">
-                    <option value="1.34">1.34 (Next)</option>
-                    <option value="1.35">1.35 (Preview)</option>
-                    <option value="1.36">1.36 (Future)</option>
-                </select>
-            </div>
-            <div style="padding-top:1.1rem;">
-                <button onclick="generateSchedule()" style="padding:.6rem 1.5rem;border-radius:8px;border:none;background:var(--accent);color:var(--bg);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;">Generate Schedule</button>
-            </div>
-        </div>
-
-        <!-- Generated Timeline -->
-        <div id="scheduleOutput" style="display:none;">
-            <div id="scheduleTimeline"></div>
-            <div id="scheduleTable" style="margin-top:1.5rem;"></div>
-            <div id="scheduleActions" style="margin-top:1.5rem;"></div>
-        </div>
+        <p style="color:var(--muted);margin-bottom:1rem;">Use the interactive planner to select a deployment date and generate a complete upgrade timeline with milestones, CLI commands, and exportable schedules.</p>
+        <a href="/upgrade-planner.html" style="display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.5rem;border-radius:8px;background:var(--accent);color:var(--bg);font-weight:700;font-size:.9rem;text-decoration:none;transition:all .2s;">Open Upgrade Schedule Planner →</a>
     </div>
 
     <!-- Rollback Strategy -->
@@ -1348,119 +1353,6 @@ document.getElementById('mainNav').addEventListener('click', e => {
         e.target.classList.add('active');
     }
 });
-
-// === Schedule Planner Logic ===
-function generateSchedule() {
-    const input = document.getElementById('deployDate').value;
-    const targetVersion = document.getElementById('upgradeTarget').value;
-    if (!input) { alert('Please select a target deployment date.'); return; }
-
-    const deploy = new Date(input + 'T00:00:00');
-    const today = new Date(); today.setHours(0,0,0,0);
-
-    // Milestone definitions (weeks before deploy day)
-    const milestones = [
-        { id: 'discovery',     label: '🔍 Discovery & Analysis',          weeksB: 8,  duration: 2, color: '#818cf8',
-          tasks: ['Review K8s ' + targetVersion + ' changelog & release notes','Run pluto detect-all-in-cluster for deprecated APIs','Check NGINX Ingress / cert-manager compatibility matrix','Review CVEs fixed in target release','Capacity planning — verify node pool sizing is sufficient','Identify any custom admission webhooks affected','Submit Change Advisory Board (CAB) request'] },
-        { id: 'preparation',   label: '🛠️ Preparation',                   weeksB: 6,  duration: 2, color: '#38bdf8',
-          tasks: ['Update Helm chart values for target K8s version','Update Dockerfiles if base image changes needed','Pin add-on versions (NGINX Ingress, cert-manager) for target','Update PodDisruptionBudgets if needed','Update Network Policies for any new API changes','Prepare rollback runbook with exact commands','Update CI/CD pipelines with new K8s version tests','Upgrade kubectl locally to match target version'] },
-        { id: 'staging',       label: '🧪 Staging Upgrade & Validation', weeksB: 4,  duration: 1, color: '#34d399',
-          tasks: ['Upgrade staging AKS control plane to ' + targetVersion,'Add green node pool in staging','Drain blue nodes in staging','Run full integration test suite','Run load test at 50% production scale','Validate monitoring & alerting in staging','Validate Ingress TLS certificates renew correctly'] },
-        { id: 'testing',       label: '🏋️ Extended Soak Testing',         weeksB: 3,  duration: 1, color: '#fb923c',
-          tasks: ['Run staging at target version for ≥ 7 days','Monitor error rates, latency P99, pod restarts','Validate autoscaling behaviour under load','Test DR/backup procedures on upgraded cluster','Verify all CronJobs and batch processes run correctly','Sign-off from QA and application owners'] },
-        { id: 'freeze',        label: '🧊 Change Freeze & Pre-Deploy',   weeksB: 2,  duration: 1, color: '#f87171',
-          tasks: ['Initiate code freeze — no new deployments to production','Take etcd snapshot / backup','Verify AKS maintenance window is configured','Send upgrade notification to all stakeholders','Prepare war room / communication channel','Final CAB approval for production upgrade'] },
-        { id: 'deploy',        label: '🚀 Production Deploy',             weeksB: 0,  duration: 0, color: '#34d399',
-          tasks: ['Upgrade production control plane: az aks upgrade --control-plane-only -k ' + targetVersion,'Add green node pool (3× Standard_DS2_v2, K8s ' + targetVersion + ')','Cordon blue nodes: kubectl cordon -l agentpool=nodepool1','Drain blue nodes (respecting PDBs)','Run smoke tests on all namespaces (ehr, pets)','Verify Ingress (20.175.132.82), API health, Portal access','Monitor for 2 hours — if green, delete old node pool'] },
-        { id: 'postdeploy',    label: '📊 Post-Upgrade Validation',      weeksB: -1, duration: 2, color: '#a78bfa',
-          tasks: ['Monitor SLOs for 72 hours (error rate, latency, availability)','Verify autoscaling triggers correctly','Check cert-manager certificate renewal cycle','Validate Grafana dashboards show correct data','Update architecture docs with new version','Close change ticket and send completion notice','Conduct retrospective — document lessons learned'] },
-    ];
-
-    // Calculate dates
-    const phases = milestones.map(m => {
-        const start = new Date(deploy);
-        start.setDate(start.getDate() - (m.weeksB * 7));
-        const end = new Date(start);
-        end.setDate(end.getDate() + (m.duration * 7));
-        const isPast = start < today;
-        const isOverdue = end < today && m.weeksB > 0;
-        return { ...m, start, end, isPast, isOverdue };
-    });
-
-    const daysUntilDeploy = Math.ceil((deploy - today) / 86400000);
-    const firstPhaseStart = phases[0].start;
-    const daysUntilStart = Math.ceil((firstPhaseStart - today) / 86400000);
-
-    // Urgency banner
-    let urgency = '';
-    if (daysUntilDeploy < 0) {
-        urgency = '<div style="background:rgba(248,113,113,.15);border:1px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--red);">⚠️ Selected date is in the past!</b> <span style="color:var(--muted);">Please choose a future date.</span></div>';
-    } else if (daysUntilStart < 0) {
-        urgency = '<div style="background:rgba(248,113,113,.15);border:1px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--red);">🚨 Planning should have started ' + Math.abs(daysUntilStart) + ' days ago!</b> <span style="color:var(--muted);">You are behind schedule. Begin Discovery phase immediately.</span></div>';
-    } else if (daysUntilStart <= 7) {
-        urgency = '<div style="background:rgba(251,146,60,.15);border:1px solid var(--orange);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--orange);">⚡ Planning starts in ' + daysUntilStart + ' days.</b> <span style="color:var(--muted);">Begin preparing resources and scheduling the CAB review now.</span></div>';
-    } else {
-        urgency = '<div style="background:rgba(52,211,153,.15);border:1px solid var(--green);border-radius:8px;padding:1rem;margin-bottom:1rem;"><b style="color:var(--green);">✅ You have ' + daysUntilDeploy + ' days until deployment.</b> <span style="color:var(--muted);">Planning begins in ' + daysUntilStart + ' days (' + fmtDate(firstPhaseStart) + ').</span></div>';
-    }
-
-    // Visual timeline
-    let timelineHtml = urgency;
-    timelineHtml += '<div style="display:flex;flex-direction:column;gap:.75rem;">';
-    phases.forEach(p => {
-        const overdue = p.isOverdue ? 'opacity:.6;' : '';
-        const marker = p.id === 'deploy' ? '🚀' : '';
-        timelineHtml += '<div style="display:flex;align-items:stretch;gap:1rem;' + overdue + '">';
-        timelineHtml += '<div style="width:140px;text-align:right;flex-shrink:0;padding-top:.5rem;">';
-        timelineHtml += '<div style="font-size:.8rem;font-weight:700;color:' + p.color + ';">' + fmtDate(p.start) + '</div>';
-        if (p.duration > 0) timelineHtml += '<div style="font-size:.7rem;color:var(--muted);">→ ' + fmtDate(p.end) + '</div>';
-        timelineHtml += '</div>';
-        timelineHtml += '<div style="width:4px;background:' + p.color + ';border-radius:2px;flex-shrink:0;position:relative;">';
-        timelineHtml += '<div style="position:absolute;top:8px;left:-5px;width:14px;height:14px;border-radius:50%;background:' + p.color + ';border:2px solid var(--bg);"></div>';
-        timelineHtml += '</div>';
-        timelineHtml += '<div style="background:var(--surface2);border:1px solid ' + p.color + '30;border-radius:10px;padding:.75rem 1rem;flex:1;">';
-        timelineHtml += '<div style="font-weight:700;color:' + p.color + ';margin-bottom:.4rem;">' + marker + ' ' + p.label;
-        if (p.isOverdue) timelineHtml += ' <span class="badge red" style="margin-left:.5rem;">OVERDUE</span>';
-        else if (p.isPast && p.weeksB > 0) timelineHtml += ' <span class="badge orange" style="margin-left:.5rem;">IN PROGRESS</span>';
-        timelineHtml += '</div>';
-        timelineHtml += '<ul style="color:var(--muted);font-size:.82rem;margin:0;padding-left:1.2rem;columns:' + (p.tasks.length > 4 ? '2' : '1') + ';column-gap:2rem;">';
-        p.tasks.forEach(t => timelineHtml += '<li style="margin:.2rem 0;break-inside:avoid;">' + t + '</li>');
-        timelineHtml += '</ul></div></div>';
-    });
-    timelineHtml += '</div>';
-
-    // Summary table
-    let tableHtml = '<h3 style="color:var(--accent2);margin-bottom:.5rem;">📋 Schedule Summary</h3>';
-    tableHtml += '<table><tr><th>Phase</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Status</th></tr>';
-    phases.forEach(p => {
-        let status = '<span class="badge blue">Scheduled</span>';
-        if (p.isOverdue) status = '<span class="badge red">Overdue</span>';
-        else if (p.isPast && p.weeksB > 0) status = '<span class="badge orange">Should be active</span>';
-        const dur = p.duration === 0 ? '1 day' : p.duration + ' week' + (p.duration > 1 ? 's' : '');
-        tableHtml += '<tr><td>' + p.label + '</td><td>' + fmtDate(p.start) + '</td><td>' + (p.duration > 0 ? fmtDate(p.end) : fmtDate(p.start)) + '</td><td>' + dur + '</td><td>' + status + '</td></tr>';
-    });
-    tableHtml += '</table>';
-
-    // Key dates callout
-    let actionsHtml = '<div class="grid-3">';
-    actionsHtml += '<div class="stat" style="border:1px solid var(--accent);"><div class="num" style="font-size:1.3rem;">' + fmtDate(phases[0].start) + '</div><div class="label">📅 Start Planning</div></div>';
-    actionsHtml += '<div class="stat" style="border:1px solid var(--orange);"><div class="num" style="font-size:1.3rem;color:var(--orange);">' + fmtDate(phases[4].start) + '</div><div class="label">🧊 Change Freeze</div></div>';
-    actionsHtml += '<div class="stat" style="border:1px solid var(--green);"><div class="num" style="font-size:1.3rem;color:var(--green);">' + fmtDate(deploy) + '</div><div class="label">🚀 Production Deploy</div></div>';
-    actionsHtml += '</div>';
-
-    document.getElementById('scheduleTimeline').innerHTML = timelineHtml;
-    document.getElementById('scheduleTable').innerHTML = tableHtml;
-    document.getElementById('scheduleActions').innerHTML = actionsHtml;
-    document.getElementById('scheduleOutput').style.display = 'block';
-    document.getElementById('scheduleOutput').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function fmtDate(d) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
-}
-
-// Set default deploy date to 10 weeks from now
-const defDate = new Date();
-defDate.setDate(defDate.getDate() + 70);
-document.getElementById('deployDate').value = defDate.toISOString().split('T')[0];
 </script>
+</body>
+</html>
