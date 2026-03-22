@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduling — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--orange);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--orange);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--orange);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--orange);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--orange);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}.POST{background:rgba(56,189,248,.15);color:var(--accent);}.PUT{background:rgba(251,146,60,.15);color:var(--orange);}.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.orange{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>📅 Scheduling</h1>
+    <p class="tagline">Appointment booking, provider availability, waitlists, and automated reminders. The logistics engine that connects patients to the right provider at the right time.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/domain-services.html">Domain Decomposition</a> <span>/</span> <span>Scheduling</span></div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>Scheduling manages the <b>when and where</b> of healthcare delivery. When a patient calls to book an appointment, this service finds available time slots based on the requested provider's schedule, books the slot, and sets up automated reminders.</p>
+    <p>It also manages <b>waitlists</b> — if the preferred time slot is taken, the patient can join a waitlist and automatically get offered the slot if a cancellation occurs. This reduces no-shows and maximizes provider utilization.</p>
+    <div class="highlight"><b>In plain English:</b> This is the hospital's appointment book and front desk scheduling system. It knows who is available when, prevents double-booking, and reminds patients about upcoming visits so they don't forget.</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model</h2>
+    <div class="entity-box">
+        <h4>Appointment <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">Links a patient, provider, date/time, and visit type. Supports lifecycle: Scheduled → Confirmed → Checked-In → Completed or Cancelled/No-Show.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>AppointmentId</code></td><td>int (PK)</td><td>Unique identifier</td></tr>
+            <tr><td><code>PatientId</code></td><td>int (FK)</td><td>Who the appointment is for</td></tr>
+            <tr><td><code>ProviderId</code></td><td>int (FK)</td><td>Which doctor/nurse</td></tr>
+            <tr><td><code>AppointmentDate</code></td><td>DateTime</td><td>Scheduled date and time</td></tr>
+            <tr><td><code>Duration</code></td><td>int</td><td>Minutes (15, 30, 60)</td></tr>
+            <tr><td><code>Type</code></td><td>string</td><td>New Patient, Follow-Up, Urgent, Telehealth</td></tr>
+            <tr><td><code>Status</code></td><td>string</td><td>Scheduled, Confirmed, CheckedIn, Completed, Cancelled, NoShow</td></tr>
+        </table>
+    </div>
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>Availability <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Provider's available time slots by day. Generated from the provider's schedule in Provider Management. Blocks out lunch, meetings, PTO.</p>
+        </div>
+        <div class="entity-box">
+            <h4>Waitlist <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Queue of patients waiting for a specific provider/date. When a cancellation occurs, the first person on the waitlist gets an automated offer.</p>
+        </div>
+        <div class="entity-box" style="grid-column:span 2;">
+            <h4>Reminder <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Automated reminders sent via SMS or email. Default: 24 hours and 1 hour before appointment. Configurable per patient preference. Immutable once sent.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/appointments</span><span class="desc">List appointments</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/appointments</span><span class="desc">Book appointment</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/appointments/{id}</span><span class="desc">Reschedule</span></div>
+    <div class="api-row"><span class="method DELETE">DELETE</span><span class="endpoint">/api/v1/appointments/{id}</span><span class="desc">Cancel appointment</span></div>
+    <h3>v2 — Paginated + Today's View</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/appointments?page=1&amp;status=Scheduled</span><span class="desc">Paginated with filters</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/appointments/today</span><span class="desc">Today's appointments</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events</h2>
+    <table>
+        <tr><th>Event</th><th>Trigger</th><th>Consumers</th><th>Effect</th></tr>
+        <tr><td><code>AppointmentScheduled</code></td><td>New appointment booked</td><td>Notification, Audit</td><td>Patient gets confirmation SMS/email</td></tr>
+        <tr><td><code>AppointmentCancelled</code></td><td>Patient or staff cancels</td><td>Notification, Waitlist processor</td><td>Waitlist first-in-line gets the slot offer</td></tr>
+        <tr><td><code>AppointmentNoShow</code></td><td>Patient doesn't show up</td><td>Audit, Analytics</td><td>Pattern tracking for no-show reduction</td></tr>
+        <tr><td><code>ReminderSent</code></td><td>24h or 1h before visit</td><td>Audit</td><td>Logged for compliance tracking</td></tr>
+    </table>
+    <h3>Waitlist Auto-Fill Flow</h3>
+    <div class="event-flow">
+        <span class="box blue">Patient cancels</span><span class="arr">→</span>
+        <span class="box green">Slot opens up</span><span class="arr">→</span>
+        <span class="box orange">Waitlist checked</span><span class="arr">→</span>
+        <span class="box purple">Next patient offered slot via SMS</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Peak Load Patterns</h2>
+    <p>Scheduling has the most pronounced traffic peaks of any context. Understanding these patterns is critical for auto-scaling.</p>
+    <table>
+        <tr><th>Time</th><th>Load</th><th>Reason</th></tr>
+        <tr><td>Monday 8:00-9:00 AM</td><td><b style="color:var(--red);">Peak</b></td><td>Switchboard opens, weekend overflow calls</td></tr>
+        <tr><td>Weekdays 8:00-10:00 AM</td><td><b style="color:var(--orange);">High</b></td><td>Morning appointment booking window</td></tr>
+        <tr><td>Weekdays 12:00-1:00 PM</td><td><b style="color:var(--green);">Low</b></td><td>Lunch hour lull</td></tr>
+        <tr><td>Weekdays 4:00-5:00 PM</td><td><b style="color:var(--orange);">High</b></td><td>End-of-day follow-up scheduling</td></tr>
+        <tr><td>Weekends</td><td><b style="color:var(--green);">Minimal</b></td><td>Online booking only</td></tr>
+    </table>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

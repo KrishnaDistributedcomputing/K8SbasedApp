@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EHR Domain Decomposition — 6 Bounded Contexts</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}
+a:hover{text-decoration:underline;filter:brightness(1.2);}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 40%,#164e63 70%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 0%,rgba(56,189,248,.08) 0%,transparent 70%);pointer-events:none;}
+.hero h1{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#38bdf8,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.1rem;max-width:800px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}
+.breadcrumb a{color:var(--accent);}
+
+/* Container */
+.container{max-width:1200px;margin:0 auto;padding:2.5rem 2rem;}
+
+/* Intro */
+.intro{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2.5rem;}
+.intro h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.intro p{color:var(--muted);font-size:.95rem;margin-bottom:1rem;}
+.intro ul{list-style:none;margin-top:1rem;}
+.intro li{padding:.4rem 0;color:var(--muted);font-size:.9rem;display:flex;gap:.5rem;}
+.intro li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;}
+
+/* Context cards grid */
+.ctx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:2rem;margin-bottom:3rem;}
+@media(max-width:500px){.ctx-grid{grid-template-columns:1fr;}}
+
+.ctx-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:transform .2s,box-shadow .3s;}
+.ctx-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3);}
+.ctx-card .card-head{padding:1.5rem 1.75rem 1rem;display:flex;align-items:center;gap:1rem;}
+.ctx-card .icon{font-size:2rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:12px;flex-shrink:0;}
+.ctx-card .card-head h3{font-size:1.2rem;font-weight:700;}
+.ctx-card .card-head p{color:var(--muted);font-size:.85rem;margin-top:.2rem;}
+.ctx-card .card-body{padding:0 1.75rem 1.5rem;}
+
+/* Entity tags */
+.entity-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
+.entity{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.8rem;font-weight:600;color:var(--text);transition:border-color .2s;}
+.entity:hover{border-color:var(--accent);}
+.entity.root{border-color:var(--green);color:var(--green);}
+.entity .tag{font-size:.6rem;padding:.1rem .3rem;border-radius:3px;font-weight:700;margin-left:.2rem;}
+.tag.agg{background:rgba(52,211,153,.15);color:var(--green);}
+.tag.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.tag.entity-tag{background:rgba(251,146,60,.15);color:var(--orange);}
+
+/* DB badge */
+.db-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .7rem;border-radius:6px;font-size:.8rem;font-weight:600;margin-top:.5rem;}
+.db-badge.pg{background:rgba(244,114,182,.12);border:1px solid var(--pink);color:var(--pink);}
+
+/* Explain sections */
+.explain{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.explain h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;}
+.explain h3{font-size:1.1rem;font-weight:600;color:var(--accent);margin:1.5rem 0 .5rem;}
+.explain p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.explain .highlight{background:var(--bg);border-left:3px solid var(--accent);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+
+/* Two-col */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--accent);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+tr:hover td{background:rgba(56,189,248,.03);}
+
+/* Color accents per context */
+.ctx-card.patient{border-top:3px solid var(--accent);}
+.ctx-card.patient .icon{background:rgba(56,189,248,.12);color:var(--accent);}
+.ctx-card.clinical{border-top:3px solid var(--green);}
+.ctx-card.clinical .icon{background:rgba(52,211,153,.12);color:var(--green);}
+.ctx-card.scheduling{border-top:3px solid var(--orange);}
+.ctx-card.scheduling .icon{background:rgba(251,146,60,.12);color:var(--orange);}
+.ctx-card.pharmacy{border-top:3px solid var(--purple);}
+.ctx-card.pharmacy .icon{background:rgba(167,139,250,.12);color:var(--purple);}
+.ctx-card.lab{border-top:3px solid var(--pink);}
+.ctx-card.lab .icon{background:rgba(244,114,182,.12);color:var(--pink);}
+.ctx-card.provider{border-top:3px solid var(--teal);}
+.ctx-card.provider .icon{background:rgba(45,212,191,.12);color:var(--teal);}
+
+/* Features list */
+.features{list-style:none;margin:.75rem 0;}
+.features li{padding:.3rem 0;font-size:.85rem;color:var(--muted);display:flex;gap:.5rem;}
+.features li::before{content:'▸';color:var(--accent);font-weight:700;flex-shrink:0;}
+
+/* Nav links */
+.ctx-links{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:8px;font-size:.83rem;font-weight:600;text-decoration:none;transition:all .2s;}
+.btn:hover{text-decoration:none;filter:brightness(1.15);transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Mermaid */
+.mermaid-wrap{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+.mermaid-wrap pre{margin:0;}
+
+/* Footer */
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}
+.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+    <h1>Strategic Domain Decomposition</h1>
+    <p class="tagline">The EHR platform is decomposed into 6 bounded contexts, each representing a distinct business capability with its own data ownership, API surface, and event contracts. This page explains what each domain does, why it exists, and how they collaborate.</p>
+    <div class="breadcrumb">
+        <a href="/">Home</a> <span>/</span>
+        <a href="/architecture.html#domains">Architecture</a> <span>/</span>
+        <span>Domain Decomposition</span>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- WHAT IS DOMAIN DECOMPOSITION -->
+<div class="intro">
+    <h2>What is Domain Decomposition?</h2>
+    <p>In a hospital, different departments handle different things — the front desk manages patient registration, the pharmacy fills prescriptions, the lab runs tests, and the scheduling desk books appointments. Each department has its own staff, its own records, and its own way of working. They collaborate by sending messages, not by sharing a single filing cabinet.</p>
+    <p><b>Domain Decomposition</b> applies the same idea to software. Instead of one giant application that does everything (a "monolith"), we split the system into smaller, focused services — each one responsible for a single area of the hospital's workflow. In software architecture, we call each of these areas a <b>Bounded Context</b>.</p>
+    <ul>
+        <li><b>Each context owns its data</b> — Patient Management doesn't peek into Pharmacy's database, and vice versa</li>
+        <li><b>Each context has its own API</b> — Other services or the frontend call it through well-defined endpoints</li>
+        <li><b>Contexts communicate via events</b> — When a patient is registered, an event is published; scheduling and clinical pick it up</li>
+        <li><b>Teams can work independently</b> — The lab team can deploy their service without waiting for the scheduling team</li>
+        <li><b>Failures are isolated</b> — If the pharmacy service goes down, you can still check patient records and schedule appointments</li>
+    </ul>
+</div>
+
+<!-- WHY 6 CONTEXTS -->
+<div class="explain">
+    <h2>Why Exactly 6 Bounded Contexts?</h2>
+    <p>We analyzed the hospital workflow end-to-end — from the moment a patient walks in to the moment they leave with lab results and prescriptions in hand. The natural boundaries emerged around <b>who</b> uses the data, <b>when</b> they use it, and <b>how often</b> it changes.</p>
+    <div class="grid-2">
+        <div>
+            <h3>The Patient Journey</h3>
+            <p>A patient arrives → <b>Patient Management</b> captures their identity. The front desk books a slot → <b>Scheduling</b>. The doctor examines them → <b>Clinical Encounters</b>. The doctor prescribes medication → <b>Pharmacy &amp; Rx</b>. Blood work is ordered → <b>Laboratory</b>. The doctor who treated them is tracked in → <b>Provider Management</b>.</p>
+        </div>
+        <div>
+            <h3>The Technical Rationale</h3>
+            <p>Each context has different scaling needs. Lab results come in bursts (morning blood draws); scheduling peaks at 8 AM when the switchboard opens; clinical records grow steadily. By separating them, we can scale each independently — more instances for scheduling during peak hours, more database capacity for the lab during result processing.</p>
+        </div>
+    </div>
+</div>
+
+<!-- 6 BOUNDED CONTEXT CARDS -->
+<h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;">The 6 Bounded Contexts</h2>
+
+<div class="ctx-grid">
+
+    <!-- 1. Patient Management -->
+    <div class="ctx-card patient">
+        <div class="card-head">
+            <div class="icon">👤</div>
+            <div>
+                <h3>Patient Management</h3>
+                <p>Core identity, demographics, insurance, clinical indicators</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">This is the <b>source of truth for who the patient is</b>. Every other service references Patient Management when it needs a patient's name, date of birth, insurance, or allergy list. Think of it as the hospital's master patient index.</p>
+            <div class="entity-row">
+                <span class="entity root">Patient <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">Demographics <span class="tag vo">Value Object</span></span>
+                <span class="entity">Insurance <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Allergy <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Vitals <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">EmergencyContact <span class="tag vo">Value Object</span></span>
+            </div>
+            <div class="db-badge pg">PG patient-db (target)</div>
+            <ul class="features">
+                <li>Register new patients with demographics and insurance</li>
+                <li>Record and track allergies (critical for drug interaction checks)</li>
+                <li>Capture real-time vitals (temperature, heart rate, blood pressure, SpO2)</li>
+                <li>Critical vitals trigger immediate alerts to clinical staff</li>
+                <li>Publishes: PatientRegistered, AllergyRegistered, CriticalVitalsAlert</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/patient-management.html" class="btn btn-primary">Explore Patient Management</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Clinical Encounters -->
+    <div class="ctx-card clinical">
+        <div class="card-head">
+            <div class="icon">📋</div>
+            <div>
+                <h3>Clinical Encounters</h3>
+                <p>Medical encounters, diagnoses, treatment plans, clinical notes</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">When a patient sees a doctor, that visit is an <b>Encounter</b>. This context captures everything that happens during the visit — the doctor's notes, diagnoses (using ICD-10 codes), treatment plans, and medical records. It's the clinical heart of the EHR.</p>
+            <div class="entity-row">
+                <span class="entity root">Encounter <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">MedicalRecord <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Diagnosis (ICD-10) <span class="tag vo">Value Object</span></span>
+                <span class="entity">TreatmentPlan <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">ClinicalNotes <span class="tag entity-tag">Entity</span></span>
+            </div>
+            <div class="db-badge pg">PG clinical-db (target)</div>
+            <ul class="features">
+                <li>Document every patient encounter with structured medical records</li>
+                <li>Assign ICD-10 diagnosis codes for standardized reporting</li>
+                <li>Create treatment plans with follow-up schedules</li>
+                <li>Store physician's clinical notes (SOAP format)</li>
+                <li>Publishes: EncounterCompleted, DiagnosisRecorded, TreatmentPlanCreated</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/clinical-encounters.html" class="btn btn-primary">Explore Clinical Encounters</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Scheduling -->
+    <div class="ctx-card scheduling">
+        <div class="card-head">
+            <div class="icon">📅</div>
+            <div>
+                <h3>Scheduling</h3>
+                <p>Appointment booking, provider availability, reminders</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Scheduling handles the <b>when and where</b> of healthcare delivery. It manages appointment slots, checks provider availability, maintains waitlists for cancellations, and sends automated reminders so patients don't miss their visits.</p>
+            <div class="entity-row">
+                <span class="entity root">Appointment <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">Availability <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Waitlist <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Reminder <span class="tag vo">Value Object</span></span>
+            </div>
+            <div class="db-badge pg">PG scheduling-db (target)</div>
+            <ul class="features">
+                <li>Book, reschedule, and cancel appointments</li>
+                <li>Check real-time provider availability by date and specialty</li>
+                <li>Manage waitlists — auto-offer slots when cancellations happen</li>
+                <li>Send SMS/email reminders 24h and 1h before appointments</li>
+                <li>Publishes: AppointmentScheduled, AppointmentCancelled, ReminderSent</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/scheduling.html" class="btn btn-primary">Explore Scheduling</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Pharmacy & Rx -->
+    <div class="ctx-card pharmacy">
+        <div class="card-head">
+            <div class="icon">💊</div>
+            <div>
+                <h3>Pharmacy &amp; Rx</h3>
+                <p>Prescriptions, medications, drug interactions, refills</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Pharmacy manages the <b>medication lifecycle</b> — from the moment a doctor writes a prescription to when the patient picks up their refill. Critically, it checks every prescription against the patient's allergy list and current medications for dangerous drug interactions.</p>
+            <div class="entity-row">
+                <span class="entity root">Prescription <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">Medication <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Refill <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">DrugInteraction <span class="tag vo">Value Object</span></span>
+            </div>
+            <div class="db-badge pg">PG pharmacy-db (target)</div>
+            <ul class="features">
+                <li>Create prescriptions linked to encounters and providers</li>
+                <li>Automated drug interaction checking against allergy records</li>
+                <li>Track medication inventory and dispensing status</li>
+                <li>Manage prescription refills with authorization rules</li>
+                <li>Publishes: PrescriptionOrdered, DrugInteractionAlert, RefillApproved</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/pharmacy.html" class="btn btn-primary">Explore Pharmacy &amp; Rx</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Laboratory & Diagnostics -->
+    <div class="ctx-card lab">
+        <div class="card-head">
+            <div class="icon">🔬</div>
+            <div>
+                <h3>Laboratory &amp; Diagnostics</h3>
+                <p>Lab orders, results, LOINC codes, imaging</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">The lab context handles <b>diagnostic workflows</b> — from the moment a doctor orders a blood test to when results are available in the patient's chart. Results use LOINC codes for interoperability. Critical results (e.g., dangerously low potassium) trigger immediate notifications.</p>
+            <div class="entity-row">
+                <span class="entity root">LabOrder <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">LabResult <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">ImagingOrder <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Specimen <span class="tag entity-tag">Entity</span></span>
+            </div>
+            <div class="db-badge pg">PG lab-db (target)</div>
+            <ul class="features">
+                <li>Create lab orders linked to encounters and providers</li>
+                <li>Track specimens through collection, processing, and analysis</li>
+                <li>Record results with LOINC codes and reference ranges</li>
+                <li>Flag critical/abnormal results for immediate clinician notification</li>
+                <li>Publishes: LabResultReady, CriticalLabResult, ImagingCompleted</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/laboratory.html" class="btn btn-primary">Explore Laboratory</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Provider Management -->
+    <div class="ctx-card provider">
+        <div class="card-head">
+            <div class="icon">🩺</div>
+            <div>
+                <h3>Provider Management</h3>
+                <p>Clinician profiles, credentials, departments</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Provider Management is the <b>source of truth for who delivers care</b>. It tracks doctors, nurses, and specialists — their credentials, department assignments, and schedules. Other services reference this when they need to know who prescribed a medication or who is available for an appointment.</p>
+            <div class="entity-row">
+                <span class="entity root">Provider <span class="tag agg">Aggregate Root</span></span>
+                <span class="entity">Credential <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Schedule <span class="tag entity-tag">Entity</span></span>
+                <span class="entity">Department <span class="tag entity-tag">Entity</span></span>
+            </div>
+            <div class="db-badge pg">PG provider-db (target)</div>
+            <ul class="features">
+                <li>Manage clinician profiles with specialties and NPI numbers</li>
+                <li>Track credentials, certifications, and license expiry dates</li>
+                <li>Assign providers to departments and care teams</li>
+                <li>Manage schedules for availability in the scheduling context</li>
+                <li>Publishes: ProviderRegistered, CredentialExpiring, ScheduleUpdated</li>
+            </ul>
+            <div class="ctx-links">
+                <a href="/provider-management.html" class="btn btn-primary">Explore Provider Management</a>
+                <a href="/architecture.html#domains" class="btn btn-outline">Architecture View</a>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /ctx-grid -->
+
+<!-- HOW CONTEXTS COLLABORATE -->
+<div class="explain">
+    <h2>How Do These Contexts Talk to Each Other?</h2>
+    <p>In a real hospital, departments don't share a single database or filing cabinet. They send messages: the lab sends results to the doctor, the doctor sends prescriptions to the pharmacy. Our software works the same way — through <b>domain events</b> published to a message bus (Apache Kafka / Azure Event Hubs).</p>
+    <div class="highlight">
+        <b>Example:</b> A doctor finishes an appointment and orders blood work. Here's what happens behind the scenes:<br><br>
+        1. <b>Clinical Encounters</b> publishes an <code>EncounterCompleted</code> event<br>
+        2. <b>Laboratory</b> receives the event and creates a new lab order<br>
+        3. The lab tech processes the sample and records results<br>
+        4. <b>Laboratory</b> publishes <code>LabResultReady</code> (or <code>CriticalLabResult</code> if abnormal)<br>
+        5. <b>Clinical Encounters</b> picks up the result and attaches it to the patient's record<br>
+        6. <b>Notification Service</b> sends an alert to the ordering physician
+    </div>
+    <p>No service makes a direct database call to another. They communicate through events. This means if the lab system goes down temporarily, patients can still be registered, appointments can still be booked, and prescriptions can still be filled. The lab will catch up when it comes back online.</p>
+</div>
+
+<!-- DOMAIN EVENT FLOW -->
+<div class="explain">
+    <h2>Domain Event Flow Map</h2>
+    <p>Each bounded context publishes events when something important happens. Other contexts subscribe to the events they care about. Here's who talks to whom:</p>
+    <table>
+        <tr><th>Event</th><th>Published By</th><th>Consumed By</th><th>Why It Matters</th></tr>
+        <tr><td><code>PatientRegistered</code></td><td>Patient Management</td><td>Clinical, Scheduling, Audit</td><td>Other services need to know a new patient exists</td></tr>
+        <tr><td><code>AllergyRegistered</code></td><td>Patient Management</td><td>Pharmacy, Audit</td><td>Pharmacy must check drug interactions against new allergies</td></tr>
+        <tr><td><code>CriticalVitalsAlert</code></td><td>Patient Management</td><td>Clinical, Notification, Audit</td><td>Abnormal vitals need immediate clinician attention</td></tr>
+        <tr><td><code>EncounterCompleted</code></td><td>Clinical Encounters</td><td>Pharmacy, Lab, Notification</td><td>Triggers downstream orders and follow-ups</td></tr>
+        <tr><td><code>PrescriptionOrdered</code></td><td>Pharmacy &amp; Rx</td><td>Notification, Audit</td><td>Patient and pharmacy notified of new prescription</td></tr>
+        <tr><td><code>LabResultReady</code></td><td>Laboratory</td><td>Clinical, Notification</td><td>Results appear in the patient's chart automatically</td></tr>
+        <tr><td><code>CriticalLabResult</code></td><td>Laboratory</td><td>Clinical, Notification, Audit</td><td>Abnormal results require urgent physician review</td></tr>
+        <tr><td><code>AppointmentScheduled</code></td><td>Scheduling</td><td>Notification, Audit</td><td>Patient receives confirmation and reminder setup</td></tr>
+    </table>
+</div>
+
+<!-- DATA OWNERSHIP -->
+<div class="explain">
+    <h2>Data Ownership — Who Owns What?</h2>
+    <p>A key principle of domain decomposition is that <b>each context owns its data</b>. No context reads directly from another context's database. Instead, it either calls the other context's API or listens for events.</p>
+    <table>
+        <tr><th>Bounded Context</th><th>Owns</th><th>Target Database</th><th>Current State</th></tr>
+        <tr><td><b>Patient Management</b></td><td>patients, allergies, vitals, demographics, insurance</td><td>patient-db</td><td>In ehrdb (shared)</td></tr>
+        <tr><td><b>Clinical Encounters</b></td><td>encounters, medical records, diagnoses, treatment plans, notes</td><td>clinical-db</td><td>In ehrdb (shared)</td></tr>
+        <tr><td><b>Scheduling</b></td><td>appointments, availability slots, waitlists, reminders</td><td>scheduling-db</td><td>In ehrdb (shared)</td></tr>
+        <tr><td><b>Pharmacy &amp; Rx</b></td><td>prescriptions, medications, refills, interaction rules</td><td>pharmacy-db</td><td>In ehrdb (shared)</td></tr>
+        <tr><td><b>Laboratory</b></td><td>lab orders, results, specimens, imaging orders</td><td>lab-db</td><td>In ehrdb (shared)</td></tr>
+        <tr><td><b>Provider Management</b></td><td>providers, credentials, schedules, departments</td><td>provider-db</td><td>In ehrdb (shared)</td></tr>
+    </table>
+    <div class="highlight">
+        <b>Migration path:</b> Today all 6 contexts share a single PostgreSQL database (<code>ehrdb</code>). Following the Strangler Fig pattern, each will be migrated to its own database in 3 phases — enabling independent scaling, independent backups, and independent schema evolution. See <a href="/architecture.html#roadmap">Migration Roadmap</a> for the full plan.
+    </div>
+</div>
+
+<!-- AGGREGATE ROOT EXPLAINED -->
+<div class="explain">
+    <h2>What is an Aggregate Root?</h2>
+    <p>You'll see "Aggregate Root" labels on the entity tags above. Here's what that means in plain English:</p>
+    <p>An <b>Aggregate</b> is a cluster of related objects that are always changed together. The <b>Aggregate Root</b> is the "main" object — the entry point. You never modify a child object directly; you always go through the root.</p>
+    <div class="grid-2">
+        <div>
+            <h3>Real-World Analogy</h3>
+            <p>Think of a <b>Patient</b> as the Aggregate Root. A patient has allergies, vitals, and emergency contacts. You don't update an allergy in isolation — you update "Patient #123's allergy list." The Patient is the root; allergies and vitals are children that only make sense in the context of that patient.</p>
+        </div>
+        <div>
+            <h3>Why It Matters</h3>
+            <p>Aggregate Roots enforce <b>consistency boundaries</b>. When you save a patient, all their allergies and vitals are saved in one transaction. This prevents situations where a patient exists but their allergy list is only half-saved. It also tells the system where to draw the line when splitting into microservices.</p>
+        </div>
+    </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<div class="footer">
+    <a href="/">Home</a> &nbsp;·&nbsp;
+    <a href="/architecture.html">Architecture Docs</a> &nbsp;·&nbsp;
+    <a href="/api-versions.html">API Versions</a> &nbsp;·&nbsp;
+    <a href="/upgrade-planner.html">Upgrade Planner</a> &nbsp;·&nbsp;
+    <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a>
+    <br><span style="margin-top:.5rem;display:block;">EHR Cloud Platform — Canada Central — March 2026</span>
+</div>
+
+</body>
+</html>

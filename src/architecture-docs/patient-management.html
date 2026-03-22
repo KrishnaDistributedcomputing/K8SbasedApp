@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Management — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;--yellow:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;filter:brightness(1.2);}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--accent);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}
+.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}
+.card h3{font-size:1.1rem;font-weight:600;color:var(--accent);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--accent);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--accent);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+tr:hover td{background:rgba(56,189,248,.03);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--accent);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;}
+.entity-box .badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}
+.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}
+.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.entity-box table{margin-top:.5rem;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}
+.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.orange{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}
+.POST{background:rgba(56,189,248,.15);color:var(--accent);}
+.PUT{background:rgba(251,146,60,.15);color:var(--orange);}
+.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}
+.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}
+.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>👤 Patient Management</h1>
+    <p class="tagline">Core identity, demographics, insurance, clinical indicators. The source of truth for who the patient is across the entire EHR platform.</p>
+    <div class="breadcrumb">
+        <a href="/">Home</a> <span>/</span>
+        <a href="/domain-services.html">Domain Decomposition</a> <span>/</span>
+        <span>Patient Management</span>
+    </div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>Patient Management is the <b>master patient index</b> of the EHR system. When a patient walks into the hospital for the first time, this service captures their identity — name, date of birth, address, phone number, insurance details, emergency contacts, known allergies, and initial vitals.</p>
+    <p>Every other bounded context in the system depends on Patient Management. The scheduling service needs patient identifiers to book appointments. The pharmacy needs allergy data to check drug interactions. The lab needs patient demographics to label specimens. This makes Patient Management the most referenced and most critical context.</p>
+    <div class="highlight"><b>In plain English:</b> Think of this as the hospital's front desk and patient registration system. It answers the question: "Who is this patient, and what do we need to know about them before any clinical work begins?"</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model — Entities &amp; Value Objects</h2>
+
+    <div class="entity-box">
+        <h4>Patient <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">The central entity. Every allergy, vital, and emergency contact belongs to a specific patient.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>PatientId</code></td><td>int (PK)</td><td>Unique identifier, auto-generated</td></tr>
+            <tr><td><code>FirstName</code></td><td>string</td><td>Legal first name</td></tr>
+            <tr><td><code>LastName</code></td><td>string</td><td>Legal last name</td></tr>
+            <tr><td><code>DateOfBirth</code></td><td>DateTime</td><td>Used for age-based clinical rules</td></tr>
+            <tr><td><code>Gender</code></td><td>string</td><td>M / F / Other / Unknown</td></tr>
+            <tr><td><code>Email</code></td><td>string</td><td>For notifications and portal access</td></tr>
+            <tr><td><code>Phone</code></td><td>string</td><td>Primary contact number</td></tr>
+        </table>
+    </div>
+
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>Demographics <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Address, language, ethnicity, marital status. Immutable — replaced when updated.</p>
+        </div>
+        <div class="entity-box">
+            <h4>Insurance <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Health plan details — provider name, policy number, group number, coverage dates.</p>
+        </div>
+        <div class="entity-box">
+            <h4>Allergy <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Known allergies (drug, food, environmental). Severity: mild, moderate, severe. Critical for pharmacy drug interaction checks.</p>
+        </div>
+        <div class="entity-box">
+            <h4>Vitals <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Temperature, heart rate, blood pressure, respiratory rate, SpO2. Each reading is timestamped and linked to the recording provider.</p>
+        </div>
+        <div class="entity-box">
+            <h4>EmergencyContact <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Name, phone, relationship to patient. Used when patient cannot make decisions.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD (Current)</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/patients</span><span class="desc">List all patients</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/patients/{id}</span><span class="desc">Get patient by ID</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/patients</span><span class="desc">Register new patient</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/patients/{id}</span><span class="desc">Update patient details</span></div>
+    <div class="api-row"><span class="method DELETE">DELETE</span><span class="endpoint">/api/v1/patients/{id}</span><span class="desc">Remove patient</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/allergies</span><span class="desc">List allergies</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/allergies</span><span class="desc">Register allergy</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/vitals</span><span class="desc">List vitals</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/vitals</span><span class="desc">Record vitals</span></div>
+
+    <h3>v2 — Paginated + DTOs</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/patients?page=1&amp;pageSize=10&amp;search=John</span><span class="desc">Paginated search with filters</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/patients/{id}</span><span class="desc">Detailed patient with stats</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/patients/{id}/clinical-summary</span><span class="desc">Full clinical summary</span></div>
+
+    <h3>v3 — FHIR R4 (Future)</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v3/fhir/patients</span><span class="desc">FHIR Bundle search</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v3/fhir/patients/{id}</span><span class="desc">FHIR R4 Patient resource</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events Published</h2>
+    <p>When something important happens in Patient Management, these events are published to the event bus so other contexts can react:</p>
+    <table>
+        <tr><th>Event</th><th>When It Fires</th><th>Who Listens</th><th>What They Do</th></tr>
+        <tr><td><code>PatientRegistered</code></td><td>New patient created</td><td>Clinical, Scheduling, Audit</td><td>Create patient reference in their own stores</td></tr>
+        <tr><td><code>PatientUpdated</code></td><td>Demographics changed</td><td>All contexts</td><td>Sync updated name/address if cached</td></tr>
+        <tr><td><code>AllergyRegistered</code></td><td>New allergy recorded</td><td>Pharmacy, Audit</td><td>Pharmacy re-checks active prescriptions</td></tr>
+        <tr><td><code>CriticalVitalsAlert</code></td><td>Vitals outside safe range</td><td>Clinical, Notification, Audit</td><td>Immediate alert to the attending clinician</td></tr>
+    </table>
+    <h3>Event Flow Example</h3>
+    <div class="event-flow">
+        <span class="box blue">Nurse records vitals</span>
+        <span class="arr">→</span>
+        <span class="box green">SpO2 = 88% (below 90%)</span>
+        <span class="arr">→</span>
+        <span class="box orange">CriticalVitalsAlert published</span>
+        <span class="arr">→</span>
+        <span class="box purple">Notification sends SMS to doctor</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Data Store</h2>
+    <div class="grid-2">
+        <div>
+            <h3>Current State</h3>
+            <p>Shares <code>ehrdb</code> PostgreSQL database with all other contexts. Tables: <code>patients</code>, <code>allergies</code>, <code>vitals</code>.</p>
+        </div>
+        <div>
+            <h3>Target State</h3>
+            <p>Own dedicated <code>patient-db</code> PostgreSQL database. Migrated via dual-write + CDC during Phase 1 of Strangler Fig migration.</p>
+        </div>
+    </div>
+</div>
+
+</div>
+<div class="footer">
+    <a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a>
+</div>
+</body>
+</html>

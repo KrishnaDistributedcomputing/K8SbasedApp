@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacy &amp; Rx — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#4c1d95 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--purple);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--purple);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--purple);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--purple);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--purple);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}.POST{background:rgba(56,189,248,.15);color:var(--accent);}.PUT{background:rgba(251,146,60,.15);color:var(--orange);}.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.alert-box{background:rgba(248,113,113,.08);border:1px solid var(--red);border-radius:12px;padding:1.25rem;margin:1rem 0;}
+.alert-box h4{color:var(--red);margin-bottom:.5rem;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.red{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>💊 Pharmacy &amp; Rx</h1>
+    <p class="tagline">Prescriptions, medications, drug interactions, and refills. The medication safety engine that ensures every prescription is checked before a patient takes it.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/domain-services.html">Domain Decomposition</a> <span>/</span> <span>Pharmacy &amp; Rx</span></div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>Pharmacy &amp; Rx manages the <b>entire medication lifecycle</b> — from the moment a doctor writes a prescription to when the patient picks up a refill months later. Its most critical function is <b>drug interaction checking</b>: before any prescription is finalized, the system cross-references it against the patient's allergy list (from Patient Management) and their current medications to catch dangerous combinations.</p>
+    <p>For example, if a patient is allergic to penicillin and a doctor prescribes amoxicillin (a penicillin-class antibiotic), this service raises an alert before the prescription reaches the pharmacy counter.</p>
+    <div class="highlight"><b>In plain English:</b> This is the hospital pharmacy's brain. It knows what medications a patient is on, checks every new prescription for safety, tracks refills, and alerts when something dangerous might happen. It's one of the most patient-safety-critical parts of the entire EHR.</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model</h2>
+    <div class="entity-box">
+        <h4>Prescription <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">A doctor's order for a specific medication for a specific patient. Includes dosage, frequency, duration, and number of refills allowed.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>PrescriptionId</code></td><td>int (PK)</td><td>Unique identifier</td></tr>
+            <tr><td><code>PatientId</code></td><td>int (FK)</td><td>Who the prescription is for</td></tr>
+            <tr><td><code>ProviderId</code></td><td>int (FK)</td><td>Prescribing physician</td></tr>
+            <tr><td><code>MedicationName</code></td><td>string</td><td>Drug name (brand or generic)</td></tr>
+            <tr><td><code>Dosage</code></td><td>string</td><td>e.g., "500mg twice daily"</td></tr>
+            <tr><td><code>StartDate / EndDate</code></td><td>DateTime</td><td>Treatment window</td></tr>
+            <tr><td><code>RefillsRemaining</code></td><td>int</td><td>How many refills left</td></tr>
+            <tr><td><code>Status</code></td><td>string</td><td>Active, Completed, Cancelled, OnHold</td></tr>
+        </table>
+    </div>
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>Medication <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Drug catalog entry. NDC code, class (antibiotic, NSAID, etc.), contraindications, standard dosing. Referenced by prescriptions.</p>
+        </div>
+        <div class="entity-box">
+            <h4>Refill <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Each time a prescription is filled. Tracks fill date, pharmacy location, quantity dispensed. Decrements RefillsRemaining.</p>
+        </div>
+        <div class="entity-box" style="grid-column:span 2;">
+            <h4>DrugInteraction <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">The result of checking a prescription against allergies and current medications. Includes severity (Warning, Contraindicated), the conflicting drug/allergy, and clinical recommendation. Immutable — computed at prescription time.</p>
+        </div>
+    </div>
+</div>
+
+<div class="alert-box">
+    <h4>Drug Interaction Checking — How It Works</h4>
+    <p style="color:var(--muted);font-size:.9rem;">When a new prescription is created, the pharmacy service:</p>
+    <ol style="color:var(--muted);font-size:.85rem;padding-left:1.5rem;margin-top:.5rem;">
+        <li>Fetches the patient's <b>allergy list</b> from Patient Management</li>
+        <li>Fetches the patient's <b>active prescriptions</b> from its own database</li>
+        <li>Checks the new drug against all known allergies (cross-sensitivity rules)</li>
+        <li>Checks the new drug against current medications (drug-drug interactions)</li>
+        <li>Returns a list of DrugInteraction results with severity levels</li>
+        <li>If <b>Contraindicated</b>: blocks the prescription and alerts the doctor</li>
+        <li>If <b>Warning</b>: allows with doctor override + audit log entry</li>
+    </ol>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/prescriptions</span><span class="desc">List prescriptions</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/prescriptions</span><span class="desc">Create prescription</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/prescriptions/{id}</span><span class="desc">Update prescription</span></div>
+    <h3>v2 — Paginated</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/prescriptions?page=1&amp;patientId=3</span><span class="desc">Paginated by patient</span></div>
+    <h3>v3 — AI Drug Interactions (Future)</h3>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v3/clinical-ai/drug-interactions</span><span class="desc">Check drug interactions</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v3/clinical-ai/guidelines</span><span class="desc">Clinical guidelines check</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events</h2>
+    <table>
+        <tr><th>Event</th><th>Trigger</th><th>Consumers</th><th>Effect</th></tr>
+        <tr><td><code>PrescriptionOrdered</code></td><td>New Rx created</td><td>Notification, Audit</td><td>Patient notified, audit trail created</td></tr>
+        <tr><td><code>DrugInteractionAlert</code></td><td>Dangerous interaction detected</td><td>Clinical, Notification, Audit</td><td>Doctor alerted, Rx blocked until review</td></tr>
+        <tr><td><code>RefillApproved</code></td><td>Refill request processed</td><td>Notification</td><td>Patient notified Rx is ready for pickup</td></tr>
+    </table>
+    <h3>Drug Interaction Alert Flow</h3>
+    <div class="event-flow">
+        <span class="box blue">Doctor prescribes amoxicillin</span><span class="arr">→</span>
+        <span class="box red">Patient allergic to penicillin</span><span class="arr">→</span>
+        <span class="box red">CONTRAINDICATED alert</span><span class="arr">→</span>
+        <span class="box purple">Rx blocked, doctor notified</span>
+    </div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

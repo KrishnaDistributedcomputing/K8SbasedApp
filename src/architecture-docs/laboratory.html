@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratory &amp; Diagnostics — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--pink);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--pink);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--pink);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--pink);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--pink);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}.POST{background:rgba(56,189,248,.15);color:var(--accent);}.PUT{background:rgba(251,146,60,.15);color:var(--orange);}.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.red{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>🔬 Laboratory &amp; Diagnostics</h1>
+    <p class="tagline">Lab orders, results, LOINC codes, specimen tracking, and imaging. The diagnostic engine that turns doctor's orders into actionable clinical data.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/domain-services.html">Domain Decomposition</a> <span>/</span> <span>Laboratory</span></div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>When a doctor orders blood work, an X-ray, or any diagnostic test, the Laboratory context takes over. It tracks the entire lifecycle: the order is created, a specimen is collected (for lab tests), the specimen is processed, results are recorded, and then results are sent back to the requesting clinician.</p>
+    <p>Results are coded with <b>LOINC codes</b> (Logical Observation Identifiers Names and Codes) — the international standard for lab tests. For example, LOINC code "2345-7" is Glucose in serum/plasma. This standardization enables interoperability between hospitals, reference labs, and public health systems.</p>
+    <div class="highlight"><b>In plain English:</b> This is the hospital lab's workflow system. A doctor orders a test, a technician runs it, and the results flow back to the doctor's screen — all tracked, coded, and flagged if something is dangerously abnormal.</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model</h2>
+    <div class="entity-box">
+        <h4>LabOrder <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">A doctor's request for one or more lab tests. Links to the patient, ordering provider, and the encounter that triggered it.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>LabOrderId</code></td><td>int (PK)</td><td>Unique identifier</td></tr>
+            <tr><td><code>PatientId</code></td><td>int (FK)</td><td>Whose blood/specimen</td></tr>
+            <tr><td><code>ProviderId</code></td><td>int (FK)</td><td>Ordering physician</td></tr>
+            <tr><td><code>TestName</code></td><td>string</td><td>e.g., "Complete Blood Count", "Comprehensive Metabolic Panel"</td></tr>
+            <tr><td><code>LoincCode</code></td><td>string</td><td>Standardized test identifier</td></tr>
+            <tr><td><code>Status</code></td><td>string</td><td>Ordered, Collected, Processing, Completed, Cancelled</td></tr>
+            <tr><td><code>Priority</code></td><td>string</td><td>Routine, Urgent, STAT</td></tr>
+        </table>
+    </div>
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>LabResult <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">The actual result value with reference ranges. Each test produces one or more results (e.g., CBC produces WBC, RBC, Hemoglobin, Platelets). Flagged as Normal, High, Low, or Critical.</p>
+        </div>
+        <div class="entity-box">
+            <h4>ImagingOrder <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">X-ray, CT, MRI, or ultrasound orders. Includes body part, contrast requirements, and clinical indication. Results are radiology reports with findings.</p>
+        </div>
+        <div class="entity-box" style="grid-column:span 2;">
+            <h4>Specimen <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Physical sample collected from the patient — blood, urine, tissue, swab. Tracked through collection, transport, and processing. Each specimen gets a barcode for chain-of-custody tracking.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/labresults</span><span class="desc">List lab results</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/labresults/{id}</span><span class="desc">Get result by ID</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/labresults</span><span class="desc">Record lab result</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/labresults/{id}</span><span class="desc">Update result</span></div>
+    <h3>v2 — Paginated</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/labresults?page=1&amp;patientId=5</span><span class="desc">Paginated by patient</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events</h2>
+    <table>
+        <tr><th>Event</th><th>Trigger</th><th>Consumers</th><th>Effect</th></tr>
+        <tr><td><code>LabResultReady</code></td><td>Result recorded</td><td>Clinical, Notification</td><td>Result appears in patient chart, doctor notified</td></tr>
+        <tr><td><code>CriticalLabResult</code></td><td>Result outside critical range</td><td>Clinical, Notification, Audit</td><td>Immediate alert to ordering physician and on-call</td></tr>
+        <tr><td><code>ImagingCompleted</code></td><td>Radiology report finalized</td><td>Clinical, Notification</td><td>Report attached to encounter</td></tr>
+    </table>
+    <h3>Critical Result Alert Flow</h3>
+    <div class="event-flow">
+        <span class="box blue">Potassium result: 2.8 mEq/L</span><span class="arr">→</span>
+        <span class="box red">Below critical threshold 3.0</span><span class="arr">→</span>
+        <span class="box red">CriticalLabResult event</span><span class="arr">→</span>
+        <span class="box purple">SMS + page to ordering doctor</span>
+    </div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

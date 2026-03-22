@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Encounters — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#065f46 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--green);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--green);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--green);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--green);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--green);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}
+.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}
+.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}.POST{background:rgba(56,189,248,.15);color:var(--accent);}.PUT{background:rgba(251,146,60,.15);color:var(--orange);}.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}
+.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.orange{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>📋 Clinical Encounters</h1>
+    <p class="tagline">Medical encounters, diagnoses, treatment plans, and clinical notes. The clinical heart of the EHR — documenting every patient-provider interaction.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/domain-services.html">Domain Decomposition</a> <span>/</span> <span>Clinical Encounters</span></div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>When a patient sees a doctor, that visit is called an <b>Encounter</b>. Clinical Encounters is responsible for documenting everything that happens during that visit — the reason for the visit, what the doctor observed, what diagnosis was made, what treatment plan was created, and the doctor's clinical notes.</p>
+    <p>This context uses <b>ICD-10 codes</b> for diagnoses (the international standard for classifying diseases). For example, "E11.9" means Type 2 Diabetes without complications. These codes are critical for insurance billing, clinical research, and public health reporting.</p>
+    <div class="highlight"><b>In plain English:</b> This is the doctor's chart during your visit. It records why you came in, what the doctor found, what's wrong (the diagnosis), and what the plan is (medications, follow-ups, procedures). Every visit creates one Encounter.</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model</h2>
+    <div class="entity-box">
+        <h4>Encounter <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">One encounter = one visit. Links a patient to a provider at a point in time. All medical records, diagnoses, and notes hang off this.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>EncounterId</code></td><td>int (PK)</td><td>Unique visit identifier</td></tr>
+            <tr><td><code>PatientId</code></td><td>int (FK)</td><td>Reference to Patient context</td></tr>
+            <tr><td><code>ProviderId</code></td><td>int (FK)</td><td>Reference to Provider context</td></tr>
+            <tr><td><code>EncounterDate</code></td><td>DateTime</td><td>When the visit occurred</td></tr>
+            <tr><td><code>Type</code></td><td>string</td><td>Office Visit, Emergency, Telehealth, Procedure</td></tr>
+            <tr><td><code>Status</code></td><td>string</td><td>Scheduled, InProgress, Completed, Cancelled</td></tr>
+            <tr><td><code>ChiefComplaint</code></td><td>string</td><td>Patient's primary reason for the visit</td></tr>
+        </table>
+    </div>
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>MedicalRecord <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Structured documentation of findings, observations, and assessment during the encounter. Each record has a type (Progress Note, H&amp;P, Discharge Summary).</p>
+        </div>
+        <div class="entity-box">
+            <h4>Diagnosis (ICD-10) <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Standardized diagnosis code. Immutable once recorded. Examples: J06.9 (Upper respiratory infection), M54.5 (Low back pain).</p>
+        </div>
+        <div class="entity-box">
+            <h4>TreatmentPlan <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">The doctor's plan — medications to prescribe, labs to order, follow-up schedule, lifestyle recommendations, referrals.</p>
+        </div>
+        <div class="entity-box">
+            <h4>ClinicalNotes <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Free-text physician notes in SOAP format (Subjective, Objective, Assessment, Plan). The narrative record of the visit.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/medicalrecords</span><span class="desc">List medical records</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/medicalrecords/{id}</span><span class="desc">Get record by ID</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/medicalrecords</span><span class="desc">Create medical record</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/medicalrecords/{id}</span><span class="desc">Update medical record</span></div>
+    <div class="api-row"><span class="method DELETE">DELETE</span><span class="endpoint">/api/v1/medicalrecords/{id}</span><span class="desc">Delete record</span></div>
+    <h3>v2 — Paginated + Dashboard</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/medicalrecords?page=1&amp;patientId=5</span><span class="desc">Paginated records by patient</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/dashboard</span><span class="desc">Clinical dashboard KPIs</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events</h2>
+    <table>
+        <tr><th>Event</th><th>Trigger</th><th>Consumers</th><th>Effect</th></tr>
+        <tr><td><code>EncounterCompleted</code></td><td>Doctor closes visit</td><td>Pharmacy, Lab, Notification</td><td>Triggers downstream orders from treatment plan</td></tr>
+        <tr><td><code>DiagnosisRecorded</code></td><td>ICD-10 code assigned</td><td>Audit, Analytics</td><td>Supports clinical reporting and billing</td></tr>
+        <tr><td><code>TreatmentPlanCreated</code></td><td>Plan documented</td><td>Scheduling (follow-ups), Notification</td><td>Auto-books follow-up if plan requires it</td></tr>
+    </table>
+    <h3>Typical Encounter Flow</h3>
+    <div class="event-flow">
+        <span class="box blue">Patient arrives</span><span class="arr">→</span>
+        <span class="box green">Encounter created</span><span class="arr">→</span>
+        <span class="box orange">Doctor examines, records notes</span><span class="arr">→</span>
+        <span class="box purple">Encounter completed, events published</span>
+    </div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

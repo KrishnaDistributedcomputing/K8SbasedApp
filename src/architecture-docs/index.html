@@ -96,7 +96,11 @@ tr:hover td{background:rgba(56,189,248,.03);}
 .badge.purple{background:rgba(167,139,250,.15);color:var(--purple);}
 
 /* Connector lines */
-.context-box{border:2px solid var(--border);border-radius:12px;padding:1.25rem;margin:.75rem 0;position:relative;}
+.context-box{border:2px solid var(--border);border-radius:12px;padding:1.25rem;margin:.75rem 0;position:relative;transition:transform .2s,box-shadow .2s;}
+a.context-link{text-decoration:none;color:inherit;display:block;}
+a.context-link .context-box{cursor:pointer;}
+a.context-link:hover .context-box{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.3);}
+a.context-link:hover .context-box h4{text-decoration:underline;}
 .context-box h4{color:var(--accent);font-size:1rem;margin-bottom:.5rem;}
 .context-box .entities{display:flex;flex-wrap:wrap;gap:.4rem;}
 .context-box .entity{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.3rem .6rem;font-size:.8rem;}
@@ -201,19 +205,19 @@ tr:hover td{background:rgba(56,189,248,.03);}
         <h2>🏛️ High-Level Target Architecture</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    EXT(["🌐 External Consumers\nPortal · Mobile App · Partner APIs"]):::ext
-    APIM["🔀 Azure API Management\nRate Limiting · OAuth · Versioning\nAnalytics · Request Transform"]:::apim
+    EXT(["External Consumers\nPortal, Mobile App, Partner APIs"]):::ext
+    APIM["Azure API Management\nRate Limiting, OAuth, Versioning\nAnalytics, Request Transform"]:::apim
     subgraph AKS["AKS Cluster - Istio Service Mesh"]
-        PS["👤 Patient\nService"]:::svc
-        CS["📋 Clinical\nService"]:::svc
-        SS["📅 Scheduling\nService"]:::svc
-        PH["💊 Pharmacy\nService"]:::svc
-        LS["🔬 Lab\nService"]:::svc
-        PR["🩺 Provider\nService"]:::svc
-        EB{{"📡 Event Bus · Azure Event Hubs"}}:::bus
-        SF["⚡ Streaming\nFlush Svc"]:::plat
-        NS["🔔 Notification\nService"]:::plat
-        AS["📝 Audit\nService"]:::plat
+        PS["Patient\nService"]:::svc
+        CS["Clinical\nService"]:::svc
+        SS["Scheduling\nService"]:::svc
+        PH["Pharmacy\nService"]:::svc
+        LS["Lab\nService"]:::svc
+        PR["Provider\nService"]:::svc
+        EB{{"Event Bus - Azure Event Hubs"}}:::bus
+        SF["Streaming\nFlush Svc"]:::plat
+        NS["Notification\nService"]:::plat
+        AS["Audit\nService"]:::plat
     end
     EXT -->|HTTPS| APIM
     APIM -->|Ingress| PS
@@ -430,6 +434,7 @@ flowchart TD
     <div class="card">
         <h2>🧩 Strategic Domain Decomposition — 6 Bounded Contexts</h2>
         <div class="grid-2">
+            <a href="/patient-management.html" class="context-link">
             <div class="context-box" style="border-color:var(--accent);">
                 <h4>👤 Patient Management</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Core identity, demographics, insurance, clinical indicators</p>
@@ -442,9 +447,11 @@ flowchart TD
                     <span class="entity">EmergencyContact</span>
                 </div>
                 <div style="margin-top:.5rem;">
-                    <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/databases" target="_blank" class="azure-tag db"><span class="badge">PG</span> patient-db (target)</a>
+                    <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/databases" target="_blank" class="azure-tag db" onclick="event.stopPropagation();"><span class="badge">PG</span> patient-db (target)</a>
                 </div>
             </div>
+            </a>
+            <a href="/clinical-encounters.html" class="context-link">
             <div class="context-box" style="border-color:var(--green);">
                 <h4>📋 Clinical Encounters</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Medical encounters, diagnoses, treatment plans, clinical notes</p>
@@ -456,6 +463,8 @@ flowchart TD
                     <span class="entity">ClinicalNotes</span>
                 </div>
             </div>
+            </a>
+            <a href="/scheduling.html" class="context-link">
             <div class="context-box" style="border-color:var(--orange);">
                 <h4>📅 Scheduling</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Appointment booking, provider availability, reminders</p>
@@ -466,6 +475,8 @@ flowchart TD
                     <span class="entity">Reminder</span>
                 </div>
             </div>
+            </a>
+            <a href="/pharmacy.html" class="context-link">
             <div class="context-box" style="border-color:var(--purple);">
                 <h4>💊 Pharmacy &amp; Rx</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Prescriptions, medications, drug interactions, refills</p>
@@ -476,6 +487,8 @@ flowchart TD
                     <span class="entity">DrugInteraction</span>
                 </div>
             </div>
+            </a>
+            <a href="/laboratory.html" class="context-link">
             <div class="context-box" style="border-color:var(--pink);">
                 <h4>🔬 Laboratory &amp; Diagnostics</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Lab orders, results, LOINC codes, imaging</p>
@@ -486,6 +499,8 @@ flowchart TD
                     <span class="entity">Specimen</span>
                 </div>
             </div>
+            </a>
+            <a href="/provider-management.html" class="context-link">
             <div class="context-box" style="border-color:var(--teal);">
                 <h4>🩺 Provider Management</h4>
                 <p style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">Clinician profiles, credentials, departments</p>
@@ -496,6 +511,7 @@ flowchart TD
                     <span class="entity">Department</span>
                 </div>
             </div>
+            </a>
         </div>
     </div>
 
@@ -594,10 +610,10 @@ flowchart TD
         <h2>🏛️ Clean Architecture per Service</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    A["🔌 API Layer\nControllers · Minimal APIs · gRPC\nRequest validation · DTO mapping · Versioning"]:::api
-    B["⚙️ Application Layer\nCQRS: Commands via MediatR + Queries via Dapper\nApplication services · Validators · Mappers"]:::app
-    C["🏛️ Domain Layer\nAggregates · Entities · Value Objects\nDomain Events · Domain Services · Repo Ports"]:::dom
-    D["🔧 Infrastructure Layer\nEF Core write · Dapper read\nKafka Producer/Consumer · External APIs"]:::infra
+    A["API Layer\nControllers, Minimal APIs, gRPC\nRequest validation, DTO mapping, Versioning"]:::api
+    B["Application Layer\nCQRS: Commands via MediatR + Queries via Dapper\nApplication services, Validators, Mappers"]:::app
+    C["Domain Layer\nAggregates, Entities, Value Objects\nDomain Events, Domain Services, Repo Ports"]:::dom
+    D["Infrastructure Layer\nEF Core write, Dapper read\nKafka Producer/Consumer, External APIs"]:::infra
     A --> B --> C --> D
     classDef api fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
     classDef app fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
@@ -646,20 +662,20 @@ flowchart TD
         <h2>📡 Event Streaming Architecture</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart LR
-    subgraph Producers["📤 Producers"]
-        PS["👤 patient-service"]:::prod
-        CS["📋 clinical-service"]:::prod
-        SS["📅 scheduling-svc"]:::prod
-        PH["💊 pharmacy-service"]:::prod
-        LS["🔬 lab-service"]:::prod
+    subgraph Producers["Domain Producers"]
+        PS["patient-service"]:::prod
+        CS["clinical-service"]:::prod
+        SS["scheduling-svc"]:::prod
+        PH["pharmacy-service"]:::prod
+        LS["lab-service"]:::prod
     end
-    K{{"📡 Kafka Topics\n8 topics · 12 partitions"}}:::bus
-    subgraph Consumers["📥 Consumers"]
-        SF["⚡ streaming-flush"]:::cons
-        NS["🔔 notification-svc"]:::cons
-        AS["📝 audit-service"]:::cons
-        LS2["🔬 lab-service"]:::cons
-        CS2["📋 clinical-service"]:::cons
+    K{{"Kafka Topics\n8 topics, 12 partitions"}}:::bus
+    subgraph Consumers["Event Consumers"]
+        SF["streaming-flush"]:::cons
+        NS["notification-svc"]:::cons
+        AS["audit-service"]:::cons
+        LS2["lab-service"]:::cons
+        CS2["clinical-service"]:::cons
     end
     PS --> K
     CS --> K
@@ -798,18 +814,18 @@ flowchart TD
         <h2>🔀 API Management — Ingress &amp; Egress</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    subgraph APIM["🔀 Azure API Management"]
+    subgraph APIM["Azure API Management"]
         direction LR
-        ING["📥 INGRESS POLICIES\nJWT Validation · Rate Limiting\nIP Filtering · OAuth 2.0 Scopes\nQuota Enforcement · Throttling\nCorrelation ID Inject"]:::ing
-        EGR["📤 EGRESS POLICIES\nResponse Caching · CORS Headers\nContent Negotiation · Error Masking\nFHIR Compliance · gzip\nETag Generation"]:::egr
+        ING["INGRESS POLICIES\nJWT Validation, Rate Limiting\nIP Filtering, OAuth 2.0 Scopes\nQuota Enforcement, Throttling\nCorrelation ID Inject"]:::ing
+        EGR["EGRESS POLICIES\nResponse Caching, CORS Headers\nContent Negotiation, Error Masking\nFHIR Compliance, gzip\nETag Generation"]:::egr
     end
     subgraph GW["AKS Internal Gateway - Istio"]
-        R1["/api/v1/patients -> patient-service:8081"]:::route
-        R2["/api/v1/encounters -> clinical-service:8082"]:::route
-        R3["/api/v1/appointments -> scheduling:8083"]:::route
-        R4["/api/v1/prescriptions -> pharmacy:8084"]:::route
-        R5["/api/v1/labs -> lab-service:8085"]:::route
-        R6["/api/v1/providers -> provider-service:8086"]:::route
+        R1["/api/v1/patients to patient-service:8081"]:::route
+        R2["/api/v1/encounters to clinical-service:8082"]:::route
+        R3["/api/v1/appointments to scheduling:8083"]:::route
+        R4["/api/v1/prescriptions to pharmacy:8084"]:::route
+        R5["/api/v1/labs to lab-service:8085"]:::route
+        R6["/api/v1/providers to provider-service:8086"]:::route
     end
     ING -->|Inbound| GW
     GW -->|Outbound| EGR
@@ -1308,30 +1324,30 @@ flowchart LR
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
     subgraph Current["Current State"]
-        DB0[("ehrdb - All 8 tables")]:::current
+        DB0[("ehrdb\nAll 8 tables")]:::current
     end
-    subgraph P1["Phase 1: Foundation"]
-        DB1A[("patient-db - patients, allergies, vitals")]:::new
-        DB1B[("ehrdb remaining - appointments, records, prescriptions, labs, providers")]:::old
+    subgraph P1["Phase 1 Foundation"]
+        DB1A[("patient-db\npatients, allergies, vitals")]:::new
+        DB1B[("ehrdb remaining\nappointments, records, Rx, labs")]:::old
     end
-    subgraph P2["Phase 2: Clinical"]
+    subgraph P2["Phase 2 Clinical"]
         DB2A[("patient-db")]:::new
-        DB2B[("clinical-db - medical_records")]:::new
-        DB2C[("pharmacy-db - prescriptions")]:::new
-        DB2D[("lab-db - lab_results")]:::new
-        DB2E[("ehrdb shrinking - appointments, providers")]:::old
+        DB2B[("clinical-db\nmedical records")]:::new
+        DB2C[("pharmacy-db\nprescriptions")]:::new
+        DB2D[("lab-db\nlab results")]:::new
+        DB2E[("ehrdb shrinking\nappointments, providers")]:::old
     end
-    subgraph P3["Phase 3: Full Platform"]
+    subgraph P3["Phase 3 Full Platform"]
         DB3A[("patient-db")]:::done
         DB3B[("clinical-db")]:::done
-        DB3C[("scheduling-db - appointments")]:::done
+        DB3C[("scheduling-db\nappointments")]:::done
         DB3D[("pharmacy-db")]:::done
         DB3E[("lab-db")]:::done
-        DB3F[("provider-db - providers")]:::done
+        DB3F[("provider-db\nproviders")]:::done
     end
-    Current -->|"dual-write + CDC"| P1
-    P1 -->|"dual-write + CDC"| P2
-    P2 -->|"dual-write + CDC"| P3
+    Current -->|dual-write| P1
+    P1 -->|dual-write| P2
+    P2 -->|dual-write| P3
     classDef current fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
     classDef new fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
     classDef old fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
@@ -1496,12 +1512,12 @@ flowchart LR
         <h2>🔵🟢 Blue-Green Node Pool Upgrade</h2>
         <div class="mermaid-wrap"><pre class="mermaid">
 flowchart TD
-    S1["☸️ Step 1: Upgrade Control Plane\naz aks upgrade --control-plane-only\n-k 1.34"]:::step1
-    S2["🟢 Step 2: Add Green Node Pool\naz aks nodepool add --name green34\n--node-count 3 --node-vm-size DS2_v2"]:::step2
-    S3["🚫 Step 3: Cordon Blue Nodes\nkubectl cordon -l agentpool=nodepool1"]:::step3
-    S4["💧 Step 4: Drain Blue Nodes\nkubectl drain --ignore-daemonsets\n--grace-period=60"]:::step4
-    S5["✅ Step 5: Validate Green Health\nkubectl get nodes/pods\nSmoke tests · SLOs 1-2 hours"]:::step5
-    S6["🗑️ Step 6: Delete Blue Pool\naz aks nodepool delete\n--name nodepool1"]:::step6
+    S1["Step 1: Upgrade Control Plane\naz aks upgrade --control-plane-only\n-k 1.34"]:::step1
+    S2["Step 2: Add Green Node Pool\naz aks nodepool add --name green34\n--node-count 3 --node-vm-size DS2_v2"]:::step2
+    S3["Step 3: Cordon Blue Nodes\nkubectl cordon -l agentpool=nodepool1"]:::step3
+    S4["Step 4: Drain Blue Nodes\nkubectl drain --ignore-daemonsets\n--grace-period=60"]:::step4
+    S5["Step 5: Validate Green Health\nkubectl get nodes/pods\nSmoke tests, SLOs 1-2 hours"]:::step5
+    S6["Step 6: Delete Blue Pool\naz aks nodepool delete\n--name nodepool1"]:::step6
     S1 --> S2 --> S3 --> S4 --> S5 --> S6
     classDef step1 fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
     classDef step2 fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px

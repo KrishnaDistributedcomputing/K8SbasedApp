@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Provider Management — Bounded Context</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--pink:#f472b6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+a{color:var(--accent);text-decoration:none;transition:all .2s;}a:hover{text-decoration:underline;}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0f172a 100%);padding:3rem 2rem 2.5rem;text-align:center;border-bottom:3px solid var(--teal);}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:.5rem;}
+.hero .tagline{color:var(--muted);font-size:1.05rem;max-width:700px;margin:0 auto 1.5rem;}
+.breadcrumb{display:flex;justify-content:center;gap:.5rem;font-size:.85rem;color:var(--muted);}.breadcrumb a{color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+.card h2{font-size:1.35rem;font-weight:700;margin-bottom:1rem;}.card h3{font-size:1.1rem;font-weight:600;color:var(--teal);margin:1.5rem 0 .5rem;}
+.card p{color:var(--muted);font-size:.93rem;margin-bottom:.75rem;}
+.highlight{background:var(--bg);border-left:3px solid var(--teal);padding:.75rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0;color:var(--text);font-size:.9rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}@media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--bg);color:var(--teal);text-align:left;padding:.6rem .75rem;border-bottom:2px solid var(--border);font-weight:700;}
+td{padding:.55rem .75rem;border-bottom:1px solid rgba(71,85,105,.4);color:var(--muted);}
+code{background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--teal);}
+.entity-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.entity-box h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;}
+.badge.agg{background:rgba(52,211,153,.15);color:var(--green);}.badge.entity{background:rgba(251,146,60,.15);color:var(--orange);}.badge.vo{background:rgba(129,140,248,.15);color:var(--accent2);}
+.api-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;}
+.method{padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;min-width:50px;text-align:center;}
+.GET{background:rgba(52,211,153,.15);color:var(--green);}.POST{background:rgba(56,189,248,.15);color:var(--accent);}.PUT{background:rgba(251,146,60,.15);color:var(--orange);}.DELETE{background:rgba(248,113,113,.15);color:var(--red);}
+.endpoint{font-size:.85rem;color:var(--text);font-family:monospace;}.desc{font-size:.8rem;color:var(--muted);margin-left:auto;}
+.event-flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;}
+.event-flow .box{padding:.4rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;}.event-flow .arr{color:var(--muted);font-size:1.2rem;}
+.box.blue{background:rgba(56,189,248,.12);border:1px solid var(--accent);color:var(--accent);}
+.box.green{background:rgba(52,211,153,.12);border:1px solid var(--green);color:var(--green);}
+.box.red{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red);}
+.box.purple{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}.footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="hero">
+    <h1>👨‍⚕️ Provider Management</h1>
+    <p class="tagline">Provider registry, credentials, NPI numbers, department assignments, and availability schedules. The source of truth for every clinician in the system.</p>
+    <div class="breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/domain-services.html">Domain Decomposition</a> <span>/</span> <span>Provider Management</span></div>
+</div>
+<div class="container">
+
+<div class="card">
+    <h2>What This Context Does</h2>
+    <p>Every interaction in a healthcare system is tied to a provider — the doctor, nurse practitioner, physician assistant, or specialist who is responsible for patient care. Provider Management is the master registry that answers: <b>Who are our providers? What are they licensed to do? Where do they work? When are they available?</b></p>
+    <p>Each provider has a unique <b>NPI (National Provider Identifier)</b> — a 10-digit number issued by CMS that's used for billing, prescribing, and identity across all healthcare systems. This context stores credentials (board certifications, DEA numbers for prescribing), department assignments, and weekly schedule templates.</p>
+    <div class="highlight"><b>In plain English:</b> This is the hospital's staff directory on steroids. Not just names and phone numbers — it knows that Dr. Smith is board-certified in cardiology, licensed in Ontario, works Mondays and Wednesdays in Building A, and her DEA number lets her prescribe controlled substances.</div>
+</div>
+
+<div class="card">
+    <h2>Domain Model</h2>
+    <div class="entity-box">
+        <h4>Provider <span class="badge agg">Aggregate Root</span></h4>
+        <p style="color:var(--muted);font-size:.85rem;">A clinician — doctor, nurse practitioner, or physician assistant. The aggregate root owns credentials, department assignments, and availability schedules.</p>
+        <table>
+            <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>ProviderId</code></td><td>int (PK)</td><td>Unique identifier</td></tr>
+            <tr><td><code>FirstName</code></td><td>string</td><td>Given name</td></tr>
+            <tr><td><code>LastName</code></td><td>string</td><td>Family name</td></tr>
+            <tr><td><code>NPI</code></td><td>string</td><td>10-digit National Provider Identifier</td></tr>
+            <tr><td><code>Specialty</code></td><td>string</td><td>e.g., Cardiology, General Practice, Pediatrics</td></tr>
+            <tr><td><code>LicenseNumber</code></td><td>string</td><td>State/provincial medical license</td></tr>
+            <tr><td><code>LicenseExpiry</code></td><td>DateTime</td><td>Must be renewed before expiry</td></tr>
+            <tr><td><code>IsActive</code></td><td>bool</td><td>Whether provider can see patients</td></tr>
+        </table>
+    </div>
+    <div class="grid-2">
+        <div class="entity-box">
+            <h4>Credential <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Board certifications, DEA numbers, and specialty qualifications. Credentials have start/end dates and must be verified against external registries. Expired credentials block scheduling and prescribing.</p>
+        </div>
+        <div class="entity-box">
+            <h4>DepartmentAssignment <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Links providers to departments (Cardiology, ICU, Emergency, Family Medicine). A provider can belong to multiple departments with different roles (attending, resident, consulting).</p>
+        </div>
+        <div class="entity-box">
+            <h4>ScheduleTemplate <span class="badge entity">Entity</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Weekly recurring availability patterns — "Dr. Smith sees patients Mon/Wed/Fri 9AM-5PM in Clinic B." Used by the Scheduling context to offer appointment slots to patients.</p>
+        </div>
+        <div class="entity-box">
+            <h4>ProviderStatus <span class="badge vo">Value Object</span></h4>
+            <p style="color:var(--muted);font-size:.85rem;">Active, On Leave, Suspended, Retired. When status changes, downstream systems react — suspended providers can't be scheduled, retired providers are archived but never deleted for audit trails.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <h3>v1 — CRUD</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/providers</span><span class="desc">List all providers</span></div>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v1/providers/{id}</span><span class="desc">Get provider by ID</span></div>
+    <div class="api-row"><span class="method POST">POST</span><span class="endpoint">/api/v1/providers</span><span class="desc">Register new provider</span></div>
+    <div class="api-row"><span class="method PUT">PUT</span><span class="endpoint">/api/v1/providers/{id}</span><span class="desc">Update provider details</span></div>
+    <h3>v2 — Paginated + DTO</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v2/providers?page=1&amp;specialty=Cardiology</span><span class="desc">Filter by specialty, paginated</span></div>
+    <h3>v3 — FHIR R4</h3>
+    <div class="api-row"><span class="method GET">GET</span><span class="endpoint">/api/v3/fhir/Practitioner</span><span class="desc">FHIR Practitioner resource</span></div>
+</div>
+
+<div class="card">
+    <h2>Domain Events</h2>
+    <table>
+        <tr><th>Event</th><th>Trigger</th><th>Consumers</th><th>Effect</th></tr>
+        <tr><td><code>ProviderRegistered</code></td><td>New provider added</td><td>Scheduling, Patient</td><td>Schedule template created, provider appears in booking dropdown</td></tr>
+        <tr><td><code>CredentialExpiring</code></td><td>30/60/90 days before expiry</td><td>Admin, Notification</td><td>Automated warning to provider and credentialing office</td></tr>
+        <tr><td><code>ProviderSuspended</code></td><td>License revoked or administrative action</td><td>Scheduling, Pharmacy</td><td>All future appointments reassigned, prescribing rights revoked</td></tr>
+    </table>
+    <h3>Credential Expiry Flow</h3>
+    <div class="event-flow">
+        <span class="box blue">License expires in 30 days</span><span class="arr">→</span>
+        <span class="box green">CredentialExpiring event</span><span class="arr">→</span>
+        <span class="box purple">Email to provider + admin</span><span class="arr">→</span>
+        <span class="box red">If not renewed: auto-suspend</span>
+    </div>
+</div>
+
+</div>
+<div class="footer"><a href="/">Home</a> · <a href="/domain-services.html">Domain Decomposition</a> · <a href="/architecture.html">Architecture</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a></div>
+</body>
+</html>

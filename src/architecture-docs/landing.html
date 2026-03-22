@@ -80,11 +80,15 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 
 /* Architecture summary  */
 .arch-summary{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:3rem;}
-.arch-summary h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
-.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;}
-.tech-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;display:flex;align-items:center;gap:.5rem;font-size:.85rem;}
-.tech-item .ti{font-size:1.1rem;}
-.tech-item b{color:var(--accent);}
+.arch-summary h2{font-size:1.3rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;}
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;}
+@media(max-width:640px){.tech-grid{grid-template-columns:1fr 1fr;}}
+.tech-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.1rem;display:flex;align-items:center;gap:.75rem;font-size:.88rem;transition:border-color .2s,transform .2s;}
+.tech-item:hover{border-color:var(--accent);transform:translateY(-2px);}
+.tech-item .ti{font-size:1.3rem;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:8px;flex-shrink:0;}
+.tech-item b{color:var(--accent);display:block;font-size:.9rem;line-height:1.3;}
+.tech-item .tech-desc{color:var(--muted);font-size:.78rem;line-height:1.3;}
+.tech-item .tech-info{display:flex;flex-direction:column;}
 
 /* Footer */
 .footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;}
@@ -400,18 +404,18 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 <div class="arch-summary">
     <h2>🔧 Technology Stack</h2>
     <div class="tech-grid">
-        <div class="tech-item"><span class="ti">☸️</span> <b>AKS</b> — Kubernetes 1.33</div>
-        <div class="tech-item"><span class="ti">🔧</span> <b>.NET 8</b> — ASP.NET Core</div>
-        <div class="tech-item"><span class="ti">🐘</span> <b>PostgreSQL 16</b> — Flexible Server</div>
-        <div class="tech-item"><span class="ti">🐳</span> <b>ACR</b> — ehracrcanada (5 repos)</div>
-        <div class="tech-item"><span class="ti">🔀</span> <b>NGINX Ingress</b> — v1.12.0</div>
-        <div class="tech-item"><span class="ti">🔒</span> <b>cert-manager</b> — v1.17.1</div>
-        <div class="tech-item"><span class="ti">📦</span> <b>App Service</b> — B2 Linux Plan</div>
-        <div class="tech-item"><span class="ti">📡</span> <b>Event Hubs</b> — Kafka API (target)</div>
-        <div class="tech-item"><span class="ti">🛡️</span> <b>Istio</b> — Service Mesh (target)</div>
-        <div class="tech-item"><span class="ti">🔑</span> <b>Entra ID</b> — OAuth 2.0 (target)</div>
-        <div class="tech-item"><span class="ti">📊</span> <b>OpenTelemetry</b> — Observability (target)</div>
-        <div class="tech-item"><span class="ti">🏗️</span> <b>Terraform</b> — IaC (target)</div>
+        <div class="tech-item"><span class="ti">☸️</span><div class="tech-info"><b>AKS</b><span class="tech-desc">Kubernetes 1.33 · 3 nodes</span></div></div>
+        <div class="tech-item"><span class="ti">🔧</span><div class="tech-info"><b>.NET 8</b><span class="tech-desc">ASP.NET Core Web API</span></div></div>
+        <div class="tech-item"><span class="ti">🐘</span><div class="tech-info"><b>PostgreSQL 16</b><span class="tech-desc">Flexible Server · B2s</span></div></div>
+        <div class="tech-item"><span class="ti">🐳</span><div class="tech-info"><b>ACR</b><span class="tech-desc">ehracrcanada · 5 repos</span></div></div>
+        <div class="tech-item"><span class="ti">🔀</span><div class="tech-info"><b>NGINX Ingress</b><span class="tech-desc">v1.12.0 · External LB</span></div></div>
+        <div class="tech-item"><span class="ti">🔒</span><div class="tech-info"><b>cert-manager</b><span class="tech-desc">v1.17.1 · TLS certs</span></div></div>
+        <div class="tech-item"><span class="ti">📦</span><div class="tech-info"><b>App Service</b><span class="tech-desc">B2 Linux · 4 Web Apps</span></div></div>
+        <div class="tech-item"><span class="ti">📡</span><div class="tech-info"><b>Event Hubs</b><span class="tech-desc">Kafka API · 8 topics (target)</span></div></div>
+        <div class="tech-item"><span class="ti">🛡️</span><div class="tech-info"><b>Istio</b><span class="tech-desc">Service Mesh · mTLS (target)</span></div></div>
+        <div class="tech-item"><span class="ti">🔑</span><div class="tech-info"><b>Entra ID</b><span class="tech-desc">OAuth 2.0 · 5 roles (target)</span></div></div>
+        <div class="tech-item"><span class="ti">📊</span><div class="tech-info"><b>OpenTelemetry</b><span class="tech-desc">Metrics · Traces · Logs (target)</span></div></div>
+        <div class="tech-item"><span class="ti">🏗️</span><div class="tech-info"><b>Terraform</b><span class="tech-desc">IaC provisioning (target)</span></div></div>
     </div>
 </div>
 
