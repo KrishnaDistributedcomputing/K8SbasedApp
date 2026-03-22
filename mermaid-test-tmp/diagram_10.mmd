@@ -1,0 +1,12 @@
+﻿flowchart LR
+    D["DISCOVERY\nWeek -8 to -6\nReview changelog\nCheck API deprecations\nAudit add-on versions\nReview CVEs\nCapacity planning\nStakeholder sign-off"]:::disc
+    P["PREPARATION\nWeek -5 to -3\nUpdate Helm charts\nUpdate Dockerfiles\nPin add-on versions\nUpdate PDBs\nNetwork policies\nRollback plan"]:::prep
+    V["VALIDATION\nWeek -2 to -1\nUpgrade staging AKS\nFull test suite\nLoad test 50% prod\nValidate monitoring\nDR rehearsal\nChange Advisory Board"]:::val
+    PROD["PRODUCTION\nDeploy Day\nUpgrade control plane\nSurge node pool\nDrain old nodes\nSmoke tests\nHealth checks"]:::prod
+    POST["POST-UPGRADE\n+1 to +2 Weeks\nMonitor SLOs 72h\nCheck error rates\nVerify autoscaling\nUpdate runbooks\nDelete old pool\nClose change ticket"]:::post
+    D --> P --> V --> PROD --> POST
+    classDef disc fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef prep fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef val fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef prod fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef post fill:#164e63,stroke:#2dd4bf,color:#e2e8f0,stroke-width:2px

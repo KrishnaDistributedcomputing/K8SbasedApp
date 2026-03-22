@@ -1,0 +1,10 @@
+﻿flowchart TD
+    A["API Layer\nControllers, Minimal APIs, gRPC\nRequest validation, DTO mapping, Versioning"]:::api
+    B["Application Layer\nCQRS: Commands via MediatR + Queries via Dapper\nApplication services, Validators, Mappers"]:::app
+    C["Domain Layer\nAggregates, Entities, Value Objects\nDomain Events, Domain Services, Repo Ports"]:::dom
+    D["Infrastructure Layer\nEF Core write, Dapper read\nKafka Producer/Consumer, External APIs"]:::infra
+    A --> B --> C --> D
+    classDef api fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef app fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef dom fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef infra fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px

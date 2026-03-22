@@ -1,0 +1,38 @@
+﻿flowchart LR
+    subgraph ENTRA["Azure Entra ID"]
+        direction TB
+        subgraph AR["App Registrations"]
+            A1["ehr-api-app\nclient_id"]:::app
+            A2["ehr-portal-spa\npublic client"]:::app
+            A3["ehr-partner-daemon\nclient secret"]:::app
+        end
+        subgraph EA["Enterprise Apps"]
+            E1["APIM Service\nPrincipal"]:::ent
+            E2["AKS Managed\nIdentity"]:::ent
+            E3["ACR Pull\nIdentity"]:::ent
+        end
+        subgraph ROLES["App Roles"]
+            R1["EHR.Admin"]:::role
+            R2["EHR.Clinician"]:::role
+            R3["EHR.Nurse"]:::role
+            R4["EHR.LabTech"]:::role
+            R5["EHR.Emergency"]:::role
+        end
+        subgraph SCOPES["OAuth 2.0 Scopes"]
+            S1["patient.read/write"]:::scope
+            S2["encounter.read"]:::scope
+            S3["prescription.write"]:::scope
+            S4["lab.read/write"]:::scope
+            S5["admin.full"]:::scope
+        end
+    end
+    ROLES --> SCOPES
+    classDef app fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef ent fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef role fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef scope fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    style ENTRA fill:#0f172a,stroke:#f472b6,color:#e2e8f0
+    style AR fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+    style EA fill:#1e293b,stroke:#a78bfa,color:#e2e8f0
+    style ROLES fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style SCOPES fill:#1e293b,stroke:#34d399,color:#e2e8f0

@@ -30,6 +30,7 @@ a:hover{text-decoration:underline;}
 .main{max-width:1400px;margin:0 auto;padding:2rem;}
 .section{display:none;}
 .section.active{display:block;}
+body.mermaid-loading .main{visibility:hidden;height:0;overflow:hidden;}
 
 /* Cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
@@ -1584,11 +1585,12 @@ az aks maintenanceconfiguration add -g <span class="string">rg-aks-store-demo</s
 
 </div><!-- /main -->
 
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
 mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false,
     theme: 'dark',
+    securityLevel: 'loose',
     themeVariables: {
         darkMode: true,
         background: '#0f172a',
@@ -1602,6 +1604,21 @@ mermaid.initialize({
     },
     flowchart: { curve: 'basis', htmlLabels: true }
 });
+
+// Render Mermaid with all sections visible to avoid display:none dimension issues
+(async function() {
+    document.body.classList.add('mermaid-loading');
+    // Temporarily show all sections so Mermaid can measure SVG dimensions
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'block');
+    try {
+        await mermaid.run();
+    } catch(e) {
+        console.warn('Mermaid render warning:', e);
+    }
+    // Restore hidden state
+    document.querySelectorAll('.section').forEach(s => s.style.display = '');
+    document.body.classList.remove('mermaid-loading');
+})();
 </script>
 <script>
 // Navigate to a section by name

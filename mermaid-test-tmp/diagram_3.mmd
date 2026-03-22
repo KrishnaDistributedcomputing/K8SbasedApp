@@ -1,0 +1,31 @@
+﻿flowchart LR
+    subgraph Producers["Domain Producers"]
+        PS["patient-service"]:::prod
+        CS["clinical-service"]:::prod
+        SS["scheduling-svc"]:::prod
+        PH["pharmacy-service"]:::prod
+        LS["lab-service"]:::prod
+    end
+    K{{"Kafka Topics\n8 topics, 12 partitions"}}:::bus
+    subgraph Consumers["Event Consumers"]
+        SF["streaming-flush"]:::cons
+        NS["notification-svc"]:::cons
+        AS["audit-service"]:::cons
+        LS2["lab-service"]:::cons
+        CS2["clinical-service"]:::cons
+    end
+    PS --> K
+    CS --> K
+    SS --> K
+    PH --> K
+    LS --> K
+    K --> SF
+    K --> NS
+    K --> AS
+    K --> LS2
+    K --> CS2
+    classDef prod fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef bus fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef cons fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    style Producers fill:#1e293b,stroke:#34d399,color:#e2e8f0
+    style Consumers fill:#1e293b,stroke:#38bdf8,color:#e2e8f0

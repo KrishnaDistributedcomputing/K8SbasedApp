@@ -1,0 +1,21 @@
+﻿flowchart TD
+    subgraph Write["Commands - Write Path"]
+        WA["Command API\nPOST / PUT / DELETE"]:::write
+        WH["Command Handler\nMediatR"]:::handler
+        WD[("Write DB\nPostgreSQL\nNormalized")]:::writedb
+    end
+    subgraph Read["Queries - Read Path"]
+        RA["Query API\nGET"]:::read
+        RH["Query Handler\nDapper"]:::handler
+        RD[("Read Store\nRedis / Cosmos\nDenormalized")]:::readdb
+    end
+    WA --> WH --> WD
+    RA --> RH --> RD
+    WD -->|"Kafka CDC"| RD
+    classDef write fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef read fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef handler fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef writedb fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef readdb fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    style Write fill:#0f172a,stroke:#38bdf8,color:#e2e8f0
+    style Read fill:#0f172a,stroke:#34d399,color:#e2e8f0

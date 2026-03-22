@@ -1,0 +1,34 @@
+﻿flowchart TD
+    subgraph Current["Current State"]
+        DB0[("ehrdb\nAll 8 tables")]:::current
+    end
+    subgraph P1["Phase 1 Foundation"]
+        DB1A[("patient-db\npatients, allergies, vitals")]:::new
+        DB1B[("ehrdb remaining\nappointments, records, Rx, labs")]:::old
+    end
+    subgraph P2["Phase 2 Clinical"]
+        DB2A[("patient-db")]:::new
+        DB2B[("clinical-db\nmedical records")]:::new
+        DB2C[("pharmacy-db\nprescriptions")]:::new
+        DB2D[("lab-db\nlab results")]:::new
+        DB2E[("ehrdb shrinking\nappointments, providers")]:::old
+    end
+    subgraph P3["Phase 3 Full Platform"]
+        DB3A[("patient-db")]:::done
+        DB3B[("clinical-db")]:::done
+        DB3C[("scheduling-db\nappointments")]:::done
+        DB3D[("pharmacy-db")]:::done
+        DB3E[("lab-db")]:::done
+        DB3F[("provider-db\nproviders")]:::done
+    end
+    Current -->|dual-write| P1
+    P1 -->|dual-write| P2
+    P2 -->|dual-write| P3
+    classDef current fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef new fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef old fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef done fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    style Current fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
+    style P1 fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style P2 fill:#1e293b,stroke:#34d399,color:#e2e8f0
+    style P3 fill:#1e293b,stroke:#a78bfa,color:#e2e8f0

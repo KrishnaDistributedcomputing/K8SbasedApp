@@ -1,0 +1,21 @@
+﻿flowchart TD
+    subgraph APIM["Azure API Management"]
+        direction LR
+        ING["INGRESS POLICIES\nJWT Validation, Rate Limiting\nIP Filtering, OAuth 2.0 Scopes\nQuota Enforcement, Throttling\nCorrelation ID Inject"]:::ing
+        EGR["EGRESS POLICIES\nResponse Caching, CORS Headers\nContent Negotiation, Error Masking\nFHIR Compliance, gzip\nETag Generation"]:::egr
+    end
+    subgraph GW["AKS Internal Gateway - Istio"]
+        R1["/api/v1/patients to patient-service:8081"]:::route
+        R2["/api/v1/encounters to clinical-service:8082"]:::route
+        R3["/api/v1/appointments to scheduling:8083"]:::route
+        R4["/api/v1/prescriptions to pharmacy:8084"]:::route
+        R5["/api/v1/labs to lab-service:8085"]:::route
+        R6["/api/v1/providers to provider-service:8086"]:::route
+    end
+    ING -->|Inbound| GW
+    GW -->|Outbound| EGR
+    classDef ing fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef egr fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef route fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    style APIM fill:#1e293b,stroke:#fb923c,color:#e2e8f0
+    style GW fill:#1e293b,stroke:#a78bfa,color:#e2e8f0

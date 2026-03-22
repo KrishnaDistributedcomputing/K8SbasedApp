@@ -1,0 +1,14 @@
+﻿flowchart TD
+    S1["Step 1: Upgrade Control Plane\naz aks upgrade --control-plane-only\n-k 1.34"]:::step1
+    S2["Step 2: Add Green Node Pool\naz aks nodepool add --name green34\n--node-count 3 --node-vm-size DS2_v2"]:::step2
+    S3["Step 3: Cordon Blue Nodes\nkubectl cordon -l agentpool=nodepool1"]:::step3
+    S4["Step 4: Drain Blue Nodes\nkubectl drain --ignore-daemonsets\n--grace-period=60"]:::step4
+    S5["Step 5: Validate Green Health\nkubectl get nodes/pods\nSmoke tests, SLOs 1-2 hours"]:::step5
+    S6["Step 6: Delete Blue Pool\naz aks nodepool delete\n--name nodepool1"]:::step6
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    classDef step1 fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef step2 fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef step3 fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef step4 fill:#7f1d1d,stroke:#f87171,color:#e2e8f0,stroke-width:2px
+    classDef step5 fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef step6 fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px

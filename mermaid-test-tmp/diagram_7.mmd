@@ -1,0 +1,24 @@
+﻿flowchart TD
+    INT(["Internet"]):::ext
+    WAF["Azure WAF\nDDoS, OWASP rules"]:::waf
+    APIM["APIM\nJWT, Rate Limiting"]:::apim
+    ISTIO["Istio Gateway\nmTLS between all pods"]:::istio
+    SA["Service A"]:::svc
+    SB["Service B"]:::svc
+    SC["Service C"]:::svc
+    DNS[("Azure Private DNS\n*.postgres.database.azure\n*.redis.cache.windows.net")]:::dns
+    INT -->|HTTPS| WAF
+    WAF --> APIM
+    APIM -->|Private Link| ISTIO
+    ISTIO -->|mTLS| SA
+    ISTIO -->|mTLS| SB
+    ISTIO -->|mTLS| SC
+    SA -->|Private Endpoint| DNS
+    SB -->|Private Endpoint| DNS
+    SC -->|Private Endpoint| DNS
+    classDef ext fill:#164e63,stroke:#2dd4bf,color:#e2e8f0,stroke-width:2px
+    classDef waf fill:#7f1d1d,stroke:#f87171,color:#e2e8f0,stroke-width:2px
+    classDef apim fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef istio fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef svc fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef dns fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px

@@ -1,0 +1,21 @@
+﻿flowchart TD
+    subgraph SUB["Azure Subscription"]
+        subgraph RG["Resource Group: rg-aks-store-demo"]
+            AKS["AKS Cluster\n3 nodes DS2_v2\nK8s 1.33"]:::aks
+            APIM["APIM Gateway\nStandard tier"]:::apim
+            EH["Azure Event Hubs\nKafka-compatible\n12 partitions/topic"]:::bus
+            PG[("PostgreSQL Flexible\nehrdb B2s\npatient-db, clinical-db")]:::db
+            ACR["Container Registry\nehracrcanada\nPremium, Geo-replication"]:::acr
+        end
+    end
+    AKS --- APIM
+    AKS --- EH
+    AKS --- PG
+    AKS --- ACR
+    classDef aks fill:#4c1d95,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef apim fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    classDef bus fill:#1e3a5f,stroke:#38bdf8,color:#e2e8f0,stroke-width:2px
+    classDef db fill:#065f46,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef acr fill:#78350f,stroke:#fb923c,color:#e2e8f0,stroke-width:2px
+    style SUB fill:#0f172a,stroke:#475569,color:#e2e8f0
+    style RG fill:#1e293b,stroke:#38bdf8,color:#e2e8f0
