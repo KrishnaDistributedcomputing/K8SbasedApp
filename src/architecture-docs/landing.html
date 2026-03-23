@@ -90,6 +90,43 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 .tech-item .tech-desc{color:var(--muted);font-size:.78rem;line-height:1.3;}
 .tech-item .tech-info{display:flex;flex-direction:column;}
 
+/* Quick Nav */
+.quick-nav{max-width:1200px;margin:2rem auto 0;padding:0 2rem;position:relative;z-index:2;}
+.quick-nav-inner{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.75rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.quick-nav-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);white-space:nowrap;}
+.quick-nav-links{display:flex;gap:.5rem;flex-wrap:wrap;}
+.qn-link{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .85rem;border-radius:8px;font-size:.82rem;font-weight:600;background:var(--bg);border:1px solid var(--border);color:var(--text);transition:all .2s;text-decoration:none;}
+.qn-link:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);text-decoration:none;}
+.qn-link .qn-emoji{font-size:.9rem;}
+
+/* Compact App Cards */
+.app-compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem;margin-bottom:2.5rem;}
+@media(max-width:740px){.app-compact{grid-template-columns:1fr;}}
+.compact-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;transition:transform .2s,box-shadow .2s;}
+.compact-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.25);}
+.compact-card .cc-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;}
+.compact-card .cc-icon{font-size:1.6rem;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0;}
+.compact-card .cc-title{font-size:1.05rem;font-weight:700;}
+.compact-card .cc-badge{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:.4rem;vertical-align:middle;}
+.compact-card .cc-desc{color:var(--muted);font-size:.88rem;margin-bottom:.85rem;line-height:1.6;}
+.compact-card .cc-meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;}
+.cc-tag{background:var(--bg);border:1px solid rgba(71,85,105,.5);border-radius:6px;padding:.2rem .55rem;font-size:.73rem;color:var(--muted);}
+.cc-tag b{color:var(--text);font-weight:600;}
+.compact-card .cc-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+
+/* Card colors */
+.compact-card.c-blue{border-top:3px solid var(--accent);}.compact-card.c-blue .cc-icon{background:rgba(56,189,248,.12);}
+.compact-card.c-green{border-top:3px solid var(--green);}.compact-card.c-green .cc-icon{background:rgba(52,211,153,.12);}
+.compact-card.c-purple{border-top:3px solid var(--purple);}.compact-card.c-purple .cc-icon{background:rgba(167,139,250,.12);}
+.compact-card.c-orange{border-top:3px solid var(--orange);}.compact-card.c-orange .cc-icon{background:rgba(251,146,60,.12);}
+.compact-card.c-teal{border-top:3px solid var(--teal);}.compact-card.c-teal .cc-icon{background:rgba(45,212,191,.12);}
+.compact-card.c-pink{border-top:3px solid var(--pink);}.compact-card.c-pink .cc-icon{background:rgba(244,114,182,.12);}
+.compact-card.c-gray{border-top:3px solid var(--muted);}.compact-card.c-gray .cc-icon{background:rgba(226,232,240,.08);}
+.compact-card.c-indigo{border-top:3px solid var(--accent2);}.compact-card.c-indigo .cc-icon{background:rgba(129,140,248,.12);}
+
+/* Section divider */
+.sec-divider{border:none;border-top:1px solid var(--border);margin:1rem 0 2.5rem;}
+
 /* Strategy Guide Cards */
 .strategy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-top:1.25rem;}
 .strategy-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:transform .2s,box-shadow .2s;cursor:pointer;display:block;text-decoration:none;color:inherit;}
@@ -124,339 +161,253 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 <!-- ===== HERO ===== -->
 <div class="hero">
     <h1>🏥 EHR Cloud Platform</h1>
-    <p class="tagline">Enterprise-grade Electronic Health Records system built on Azure Kubernetes Service — microservice architecture, event streaming, and domain-driven design.</p>
+    <p class="tagline">Electronic Health Records on Azure Kubernetes Service — microservices, event streaming, and domain-driven design.</p>
     <div class="meta-bar">
-        <span>📍 Region: <b>Canada Central</b></span>
-        <span>☸️ Kubernetes: <b>v1.33</b></span>
-        <span>🔧 Runtime: <b>.NET 8</b></span>
-        <span>🐘 Database: <b>PostgreSQL 16</b></span>
-        <span>📅 <b>March 2026</b></span>
+        <span>📍 <b>Canada Central</b></span>
+        <span>☸️ <b>K8s 1.33</b></span>
+        <span>🔧 <b>.NET 8</b></span>
+        <span>🐘 <b>PostgreSQL 16</b></span>
+        <span>🐙 <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" style="color:var(--accent);">GitHub Repo</a></span>
+    </div>
+</div>
+
+<!-- ===== QUICK NAV ===== -->
+<div class="quick-nav">
+    <div class="quick-nav-inner">
+        <div class="quick-nav-label">Quick Links</div>
+        <div class="quick-nav-links">
+            <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank" class="qn-link"><span class="qn-emoji">🏥</span> EHR Portal</a>
+            <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" class="qn-link"><span class="qn-emoji">⚙️</span> Swagger API</a>
+            <a href="/architecture.html" class="qn-link"><span class="qn-emoji">🏗️</span> Architecture</a>
+            <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank" class="qn-link"><span class="qn-emoji">💰</span> Costing</a>
+            <a href="/domain-services.html" class="qn-link"><span class="qn-emoji">🧩</span> Domains</a>
+            <a href="/strangler-pattern.html" class="qn-link"><span class="qn-emoji">🌿</span> Strangler</a>
+            <a href="/tcp-to-https.html" class="qn-link"><span class="qn-emoji">🔌</span> TCP→HTTPS</a>
+            <a href="/rto-rpo.html" class="qn-link"><span class="qn-emoji">⏱️</span> RTO/RPO</a>
+            <a href="/upgrade-planner.html" class="qn-link"><span class="qn-emoji">📅</span> Upgrade Planner</a>
+            <a href="/api-versions.html" class="qn-link"><span class="qn-emoji">🔀</span> API Versions</a>
+            <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" class="qn-link"><span class="qn-emoji">🐙</span> GitHub</a>
+        </div>
     </div>
 </div>
 
 <!-- ===== STATS ===== -->
-<div class="stats-row">
-    <div class="stat-card"><div class="num">8</div><div class="label">Live Applications</div></div>
-    <div class="stat-card"><div class="num">11</div><div class="label">Target Microservices</div></div>
+<div class="stats-row" style="margin-top:1.5rem;">
+    <div class="stat-card"><div class="num">4</div><div class="label">Live Web Apps</div></div>
     <div class="stat-card"><div class="num">6</div><div class="label">Bounded Contexts</div></div>
-    <div class="stat-card"><div class="num">13</div><div class="label">K8s Pods Running</div></div>
-    <div class="stat-card"><div class="num">5</div><div class="label">ACR Repositories</div></div>
+    <div class="stat-card"><div class="num">8</div><div class="label">API Controllers</div></div>
+    <div class="stat-card"><div class="num">133</div><div class="label">Seed Records</div></div>
     <div class="stat-card"><div class="num">3</div><div class="label">AKS Nodes</div></div>
+    <div class="stat-card"><div class="num">13</div><div class="label">K8s Pods</div></div>
 </div>
 
 <div class="container">
 
-<!-- ===== APPLICATIONS ===== -->
+<!-- ===== SECTION: LIVE APPLICATIONS ===== -->
 <h2 class="sec-title">🚀 Live Applications</h2>
-<p class="sec-subtitle">All applications are deployed on Azure and accessible via their public endpoints. Click any card to explore.</p>
+<p class="sec-subtitle">Click any link to open. All apps run as containers on Azure Web Apps (App Service B2).</p>
 
-<div class="app-grid">
+<div class="app-compact">
 
 <!-- EHR Portal -->
-<div class="app-card portal">
-    <div class="card-header">
-        <div class="card-icon">🏥</div>
-        <div>
-            <div class="card-title">EHR Portal <span class="card-badge" style="background:rgba(56,189,248,.15);color:var(--accent);">LIVE</span></div>
-            <div class="card-url">ehr-portal-canadacentral.azurewebsites.net</div>
-        </div>
+<div class="compact-card c-blue">
+    <div class="cc-header">
+        <div class="cc-icon">🏥</div>
+        <div><div class="cc-title">EHR Portal <span class="cc-badge" style="background:rgba(56,189,248,.15);color:var(--accent);">LIVE</span></div></div>
     </div>
-    <div class="card-body">
-        <p class="card-desc">The primary patient-facing <b>Single Page Application (SPA)</b> that provides healthcare professionals with a unified interface to manage electronic health records. Built as a responsive web app with real-time data binding to the EHR API.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Runtime</div><div class="dd">nginx:alpine + SPA</div></div>
-            <div class="detail"><div class="dt">Image</div><div class="dd">ehr-frontend:v3-webapp</div></div>
-            <div class="detail"><div class="dt">Deployment</div><div class="dd">Azure Web App (B2)</div></div>
-            <div class="detail"><div class="dt">Backend</div><div class="dd">nginx reverse proxy → API</div></div>
-        </div>
-        <ul class="card-features">
-            <li>Patient demographics management — search, create, edit 15+ patient records</li>
-            <li>Provider directory with 8 healthcare professionals across specialties</li>
-            <li>Appointment scheduling with 20+ appointments, status tracking, provider assignment</li>
-            <li>Medical records viewer — encounter notes, diagnoses, treatment plans</li>
-            <li>Prescription management — 18 active prescriptions with dosage, frequency, refill tracking</li>
-            <li>Lab results dashboard — 20 results with reference ranges, abnormal flagging</li>
-            <li>Allergy registry with severity levels and allergen categorization</li>
-            <li>Vitals charting — 25 readings including temperature, BP, heart rate, SpO2</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank" class="btn btn-primary">Open Portal →</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-portal-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure Portal ↗</a>
-        </div>
+    <p class="cc-desc">Patient-facing SPA for managing health records — demographics, appointments, prescriptions, lab results, allergies, and vitals. Connects to the REST API via nginx reverse proxy.</p>
+    <div class="cc-meta">
+        <span class="cc-tag"><b>nginx:alpine</b> + SPA</span>
+        <span class="cc-tag">Image: <b>ehr-frontend:v3-webapp</b></span>
+        <span class="cc-tag"><b>8</b> modules</span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank" class="btn btn-primary">Open Portal →</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-portal-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure ↗</a>
     </div>
 </div>
 
 <!-- EHR API -->
-<div class="app-card api">
-    <div class="card-header">
-        <div class="card-icon">⚙️</div>
-        <div>
-            <div class="card-title">EHR REST API <span class="card-badge" style="background:rgba(52,211,153,.15);color:var(--green);">LIVE</span></div>
-            <div class="card-url">ehr-api-canadacentral.azurewebsites.net/swagger</div>
-        </div>
+<div class="compact-card c-green">
+    <div class="cc-header">
+        <div class="cc-icon">⚙️</div>
+        <div><div class="cc-title">EHR REST API <span class="cc-badge" style="background:rgba(52,211,153,.15);color:var(--green);">LIVE</span></div></div>
     </div>
-    <div class="card-body">
-        <p class="card-desc">The core <b>ASP.NET Core 8 Web API</b> that powers the entire EHR platform. Implements RESTful CRUD operations across 8 domain entities with Entity Framework Core for data persistence and Swagger/OpenAPI documentation. Connects to Azure PostgreSQL Flexible Server over SSL.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Runtime</div><div class="dd">.NET 8 / ASP.NET Core</div></div>
-            <div class="detail"><div class="dt">Image</div><div class="dd">ehr-api:v3</div></div>
-            <div class="detail"><div class="dt">ORM</div><div class="dd">EF Core + Npgsql 8.0.11</div></div>
-            <div class="detail"><div class="dt">Database</div><div class="dd">PostgreSQL 16 (B2s)</div></div>
-        </div>
-        <ul class="card-features">
-            <li>8 full CRUD controllers: Patients, Providers, Appointments, MedicalRecords, Prescriptions, LabResults, Allergies, Vitals</li>
-            <li>Swagger/OpenAPI 3.0 interactive documentation with Try-it-out</li>
-            <li>Health check endpoint at <code>/health</code> for Kubernetes liveness/readiness probes</li>
-            <li>EF Core Code-First migrations with automatic seed data (133+ records)</li>
-            <li>Connection pooling with SSL enforcement to Azure PostgreSQL</li>
-            <li>CORS enabled for SPA cross-origin requests</li>
-            <li>JSON serialization with camelCase naming and null handling</li>
-            <li>Docker multi-stage build for minimal production image (~85MB)</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" class="btn btn-primary">Swagger UI →</a>
-            <a href="https://ehr-api-canadacentral.azurewebsites.net/health" target="_blank" class="btn btn-outline">Health Check ↗</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-api-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure Portal ↗</a>
-        </div>
+    <p class="cc-desc">ASP.NET Core 8 Web API with 8 CRUD controllers, Swagger/OpenAPI docs, EF Core + PostgreSQL, health checks, and 133 seed records. Supports API versioning (v1/v2/v3).</p>
+    <div class="cc-meta">
+        <span class="cc-tag"><b>.NET 8</b> / EF Core</span>
+        <span class="cc-tag">Image: <b>ehr-api:v3</b></span>
+        <span class="cc-tag">DB: <b>PostgreSQL 16</b></span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank" class="btn btn-primary">Swagger UI →</a>
+        <a href="https://ehr-api-canadacentral.azurewebsites.net/health" target="_blank" class="btn btn-outline">Health ↗</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-api-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure ↗</a>
+    </div>
+</div>
+
+<!-- Costing -->
+<div class="compact-card c-orange">
+    <div class="cc-header">
+        <div class="cc-icon">💰</div>
+        <div><div class="cc-title">Costing Dashboard <span class="cc-badge" style="background:rgba(251,146,60,.15);color:var(--orange);">LIVE</span></div></div>
+    </div>
+    <p class="cc-desc">Azure cost breakdown: AKS nodes (~$310/mo), PostgreSQL B2s, App Service B2, ACR Basic, and networking. Interactive charts with monthly projections and SKU optimization tips.</p>
+    <div class="cc-meta">
+        <span class="cc-tag">Total: <b>~$448/mo</b></span>
+        <span class="cc-tag">Image: <b>costing-app:v1</b></span>
+        <span class="cc-tag"><b>nginx:alpine</b></span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank" class="btn btn-primary">Open Dashboard →</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-costing-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure ↗</a>
     </div>
 </div>
 
 <!-- Architecture Docs -->
-<div class="app-card arch">
-    <div class="card-header">
-        <div class="card-icon">🏗️</div>
-        <div>
-            <div class="card-title">Architecture Design Document <span class="card-badge" style="background:rgba(167,139,250,.15);color:var(--purple);">LIVE</span></div>
-            <div class="card-url">ehr-architecture-canadacentral.azurewebsites.net</div>
-        </div>
+<div class="compact-card c-purple">
+    <div class="cc-header">
+        <div class="cc-icon">🏗️</div>
+        <div><div class="cc-title">Architecture Docs <span class="cc-badge" style="background:rgba(167,139,250,.15);color:var(--purple);">LIVE</span></div></div>
     </div>
-    <div class="card-body">
-        <p class="card-desc">An <b>interactive, single-page architecture design document</b> covering the complete microservice decomposition strategy. Features 12 navigable sections with Mermaid diagrams, Azure Portal deep-links, code samples, and hash-based URL routing for direct section linking.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Sections</div><div class="dd">12 navigable tabs</div></div>
-            <div class="detail"><div class="dt">Diagrams</div><div class="dd">11 Mermaid flowcharts</div></div>
-            <div class="detail"><div class="dt">Image</div><div class="dd">architecture-docs:v11</div></div>
-            <div class="detail"><div class="dt">Hosting</div><div class="dd">nginx:alpine container</div></div>
-        </div>
-        <ul class="card-features">
-            <li><b>Overview</b> — Architecture principles, high-level target diagram, live app links</li>
-            <li><b>Azure Resources</b> — Full resource inventory, K8s workloads, networking config</li>
-            <li><b>Domain Model</b> — 6 bounded contexts, context map, aggregate design, entity catalog</li>
-            <li><b>Microservices</b> — 11 target services catalog, clean architecture layers, repo structure</li>
-            <li><b>Event Streaming</b> — Kafka topic design, CQRS, CloudEvents schema, flush strategies</li>
-            <li><b>API Management</b> — APIM ingress/egress policies, products, subscription tiers</li>
-            <li><b>Security</b> — Zero-trust architecture, HIPAA controls, IAM, network policies, Key Vault, container security</li>
-            <li><b>K8s Upgrade</b> — Upgrade strategy, phases, blue-green node pool, rollback, auto-upgrade channels</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://ehr-architecture-canadacentral.azurewebsites.net/architecture.html" target="_blank" class="btn btn-primary">Open Architecture →</a>
-            <a href="https://ehr-architecture-canadacentral.azurewebsites.net/architecture.html#domains" target="_blank" class="btn btn-outline">Domain Model ↗</a>
-            <a href="https://ehr-architecture-canadacentral.azurewebsites.net/architecture.html#security" target="_blank" class="btn btn-outline">Security ↗</a>
-        </div>
+    <p class="cc-desc">Interactive design document with 12 sections, 11 Mermaid diagrams, and hash-based navigation. Covers domain model, microservices, event streaming, APIM, security, and K8s upgrades.</p>
+    <div class="cc-meta">
+        <span class="cc-tag"><b>12</b> sections</span>
+        <span class="cc-tag"><b>11</b> Mermaid diagrams</span>
+        <span class="cc-tag">Image: <b>architecture-docs:v13</b></span>
+    </div>
+    <div class="cc-actions">
+        <a href="/architecture.html" class="btn btn-primary">Architecture →</a>
+        <a href="/architecture.html#domains" class="btn btn-outline">Domains ↗</a>
+        <a href="/architecture.html#security" class="btn btn-outline">Security ↗</a>
+        <a href="/architecture.html#k8supgrade" class="btn btn-outline">K8s Upgrade ↗</a>
     </div>
 </div>
 
-<!-- Costing Dashboard -->
-<div class="app-card costing">
-    <div class="card-header">
-        <div class="card-icon">💰</div>
-        <div>
-            <div class="card-title">Costing Dashboard <span class="card-badge" style="background:rgba(251,146,60,.15);color:var(--orange);">LIVE</span></div>
-            <div class="card-url">ehr-costing-canadacentral.azurewebsites.net</div>
-        </div>
-    </div>
-    <div class="card-body">
-        <p class="card-desc">A detailed <b>Azure infrastructure cost breakdown</b> dashboard showing real monthly costs for every resource in the platform. Interactive charts visualize cost distribution across AKS, PostgreSQL, App Service Plan, ACR, and networking components.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Monthly Total</div><div class="dd">~$448/month</div></div>
-            <div class="detail"><div class="dt">Top Cost</div><div class="dd">AKS (3× DS2_v2)</div></div>
-            <div class="detail"><div class="dt">Image</div><div class="dd">costing-app:v1</div></div>
-            <div class="detail"><div class="dt">Hosting</div><div class="dd">nginx:alpine container</div></div>
-        </div>
-        <ul class="card-features">
-            <li>Itemized cost breakdown for AKS cluster nodes (~$310/mo for 3× Standard_DS2_v2)</li>
-            <li>PostgreSQL Flexible Server cost analysis (Standard_B2s, 32GB storage, backup)</li>
-            <li>App Service Plan B2 tier cost for 4 container Web Apps</li>
-            <li>Azure Container Registry Basic tier with 5 repositories</li>
-            <li>Networking costs — NGINX Ingress Controller, public IP, egress data</li>
-            <li>Interactive charts with cost-per-service and monthly projection</li>
-            <li>Comparison of current vs. optimized SKU recommendations</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank" class="btn btn-primary">Open Dashboard →</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.Web/sites/ehr-costing-canadacentral/appServices" target="_blank" class="btn btn-outline">Azure Portal ↗</a>
-        </div>
+</div><!-- /app-compact -->
+
+<hr class="sec-divider">
+
+<!-- ===== SECTION: DOCUMENTATION & STRATEGY ===== -->
+<h2 class="sec-title">📋 Documentation &amp; Strategy Guides</h2>
+<p class="sec-subtitle">Technical deep-dives on migration patterns, resilience, and API design.</p>
+
+<div class="strategy-grid" style="margin-top:0;">
+    <a href="/domain-services.html" class="strategy-card domains">
+        <div class="sc-icon">🧩</div>
+        <div class="sc-title">Domain Decomposition</div>
+        <div class="sc-desc">6 bounded contexts → microservices. Patient, Clinical, Scheduling, Pharmacy, Lab, Provider — each with its own database, API, and event contracts.</div>
+    </a>
+    <a href="/strangler-pattern.html" class="strategy-card strangler">
+        <div class="sc-icon">🌿</div>
+        <div class="sc-title">Strangler Fig Pattern</div>
+        <div class="sc-desc">Monolith-to-microservices migration: facade install, dual-write via Kafka, canary shifting with Istio, Anti-Corruption Layer per bounded context.</div>
+    </a>
+    <a href="/tcp-to-https.html" class="strategy-card tcp">
+        <div class="sc-icon">🔌</div>
+        <div class="sc-title">TCP → HTTPS Migration</div>
+        <div class="sc-desc">Replace raw TCP with HTTPS/REST + Istio mTLS. Ingress TLS termination, AuthorizationPolicy, NetworkPolicy lockdown, contract-first API design.</div>
+    </a>
+    <a href="/rto-rpo.html" class="strategy-card rto">
+        <div class="sc-icon">⏱️</div>
+        <div class="sc-title">RTO / RPO Requirements</div>
+        <div class="sc-desc">4-tier service classification. PostgreSQL zone-redundant HA, PodDisruptionBudgets, Kafka event replay for Tier 3, monitoring alerts.</div>
+    </a>
+    <a href="/api-versions.html" class="strategy-card apiver">
+        <div class="sc-icon">🔀</div>
+        <div class="sc-title">API Version Catalog</div>
+        <div class="sc-desc">v1 (basic CRUD), v2 (paginated DTOs + dashboard), v3 (FHIR R4 + AI decision support). URL-based versioning with multi-version Swagger.</div>
+    </a>
+    <a href="/upgrade-planner.html" class="strategy-card" style="border-top:3px solid var(--teal);">
+        <div class="sc-icon">📅</div>
+        <div class="sc-title">K8s Upgrade Planner</div>
+        <div class="sc-desc">Interactive tool: pick a date, K8s version, node count → get a multi-week schedule with Azure CLI commands, heatmap calendar, and CSV export.</div>
+    </a>
+</div>
+
+<!-- Bounded Context Pages -->
+<div class="arch-summary" style="margin-top:1.5rem;">
+    <h2>🗂️ Bounded Context Pages</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Each bounded context has a dedicated page with aggregate design, API surface, database schema, and event contracts.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        <a href="/patient-management.html" class="qn-link"><span class="qn-emoji">👤</span> Patient Management</a>
+        <a href="/clinical-encounters.html" class="qn-link"><span class="qn-emoji">🩺</span> Clinical Encounters</a>
+        <a href="/scheduling.html" class="qn-link"><span class="qn-emoji">📅</span> Scheduling</a>
+        <a href="/pharmacy.html" class="qn-link"><span class="qn-emoji">💊</span> Pharmacy</a>
+        <a href="/laboratory.html" class="qn-link"><span class="qn-emoji">🔬</span> Laboratory</a>
+        <a href="/provider-management.html" class="qn-link"><span class="qn-emoji">👨‍⚕️</span> Provider Management</a>
     </div>
 </div>
 
-<!-- Upgrade Planner -->
-<div class="app-card planner">
-    <div class="card-header">
-        <div class="card-icon">📅</div>
-        <div>
-            <div class="card-title">K8s Upgrade Schedule Planner <span class="card-badge" style="background:rgba(45,212,191,.15);color:var(--teal);">TOOL</span></div>
-            <div class="card-url">ehr-architecture-canadacentral.azurewebsites.net/upgrade-planner.html</div>
-        </div>
-    </div>
-    <div class="card-body">
-        <p class="card-desc">An <b>interactive Kubernetes upgrade timeline generator</b> that helps platform engineers plan AKS version upgrades. Select a deployment date, target K8s version, node count, and VM size — then get a complete multi-week schedule with milestones, heatmap calendar, CLI commands, and exportable reports.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Current Version</div><div class="dd">Kubernetes 1.33</div></div>
-            <div class="detail"><div class="dt">Next Target</div><div class="dd">Kubernetes 1.34</div></div>
-            <div class="detail"><div class="dt">Output</div><div class="dd">Timeline + CLI + CSV</div></div>
-            <div class="detail"><div class="dt">Node Pools</div><div class="dd">Blue-Green strategy</div></div>
-        </div>
-        <ul class="card-features">
-            <li>Interactive date picker with deployment day selection</li>
-            <li>Heatmap calendar view showing 5 upgrade phases across 10+ weeks</li>
-            <li>Auto-generated Azure CLI commands for each upgrade step</li>
-            <li>Node count and VM size selectors for capacity planning</li>
-            <li>Copy-to-clipboard summary for change management tickets</li>
-            <li>CSV export for import into Jira, Azure DevOps, or project management tools</li>
-            <li>Blue-green node pool upgrade strategy with rollback steps</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://ehr-architecture-canadacentral.azurewebsites.net/upgrade-planner.html" target="_blank" class="btn btn-primary">Open Planner →</a>
-            <a href="https://ehr-architecture-canadacentral.azurewebsites.net/architecture.html#k8supgrade" target="_blank" class="btn btn-outline">Upgrade Strategy ↗</a>
-        </div>
-    </div>
-</div>
+<hr class="sec-divider">
 
-<!-- GitHub -->
-<div class="app-card github">
-    <div class="card-header">
-        <div class="card-icon">🐙</div>
-        <div>
-            <div class="card-title">GitHub Repository <span class="card-badge" style="background:rgba(226,232,240,.1);color:var(--text);">SOURCE</span></div>
-            <div class="card-url">github.com/KrishnaDistributedcomputing/K8SbasedApp</div>
-        </div>
-    </div>
-    <div class="card-body">
-        <p class="card-desc">The complete <b>source code repository</b> containing all application code, Kubernetes manifests, Dockerfiles, architecture documentation, and infrastructure configurations. Public repository on GitHub with full commit history tracking every deployment and feature addition.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Platform</div><div class="dd">GitHub (Public)</div></div>
-            <div class="detail"><div class="dt">Branch</div><div class="dd">master</div></div>
-            <div class="detail"><div class="dt">Apps</div><div class="dd">4 source directories</div></div>
-            <div class="detail"><div class="dt">Manifests</div><div class="dd">K8s YAML + Dockerfiles</div></div>
-        </div>
-        <ul class="card-features">
-            <li><code>src/ehr-api/</code> — Full C# ASP.NET Core 8 API with EF Core, 8 controllers, seed data</li>
-            <li><code>src/ehr-frontend/</code> — SPA frontend with nginx reverse proxy configuration</li>
-            <li><code>src/architecture-docs/</code> — Interactive architecture design doc + upgrade planner + landing page</li>
-            <li><code>src/costing-app/</code> — Azure cost breakdown dashboard</li>
-            <li><code>docs/architecture/</code> — Markdown architecture design document</li>
-            <li>Kubernetes manifests: <code>ehr-deployment.yaml</code>, <code>ehr-ingress.yaml</code>, <code>cluster-issuer.yaml</code></li>
-            <li>Full Dockerfile for each application with multi-stage builds</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" class="btn btn-primary">View Repository →</a>
-            <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp/commits/master" target="_blank" class="btn btn-outline">Commits ↗</a>
-        </div>
-    </div>
-</div>
+<!-- ===== SECTION: INFRASTRUCTURE ===== -->
+<h2 class="sec-title">🔩 Infrastructure</h2>
+<p class="sec-subtitle">The Azure resources running the platform.</p>
 
-<!-- AKS Ingress -->
-<div class="app-card aks">
-    <div class="card-header">
-        <div class="card-icon">☸️</div>
-        <div>
-            <div class="card-title">AKS Cluster &amp; NGINX Ingress <span class="card-badge" style="background:rgba(129,140,248,.15);color:var(--accent2);">INFRA</span></div>
-            <div class="card-url">20.175.132.82 (Ingress External IP)</div>
-        </div>
+<div class="app-compact">
+
+<!-- AKS -->
+<div class="compact-card c-indigo">
+    <div class="cc-header">
+        <div class="cc-icon">☸️</div>
+        <div><div class="cc-title">AKS Cluster <span class="cc-badge" style="background:rgba(129,140,248,.15);color:var(--accent2);">INFRA</span></div></div>
     </div>
-    <div class="card-body">
-        <p class="card-desc">The <b>Azure Kubernetes Service (AKS)</b> cluster running all containerized workloads across 3 namespaces. NGINX Ingress Controller provides external access with path-based routing and TLS termination via cert-manager. Hosts 13 pods including the AKS Store Demo and EHR Platform.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">Cluster</div><div class="dd">aks-store-demo</div></div>
-            <div class="detail"><div class="dt">Nodes</div><div class="dd">3× Standard_DS2_v2</div></div>
-            <div class="detail"><div class="dt">K8s Version</div><div class="dd">v1.33</div></div>
-            <div class="detail"><div class="dt">Max Pods</div><div class="dd">250 per node</div></div>
-        </div>
-        <ul class="card-features">
-            <li><b>Namespace: pets</b> — 9 pods: store-front, store-admin, order-service, product-service, makeline-service, ai-service, mongodb, rabbitmq, virtual-customer</li>
-            <li><b>Namespace: ehr</b> — 4 pods: ehr-api (2 replicas), ehr-frontend (2 replicas)</li>
-            <li>NGINX Ingress Controller v1.12.0 with external IP 20.175.132.82</li>
-            <li>cert-manager v1.17.1 with self-signed ClusterIssuer for TLS</li>
-            <li>Path-based routing: <code>/</code> → store-front, <code>/admin</code> → store-admin, <code>/ehr/*</code> → EHR</li>
-            <li>Azure CNI network plugin with 250 max pods per node</li>
-            <li>PodDisruptionBudgets for zero-downtime upgrades</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://20.175.132.82" target="_blank" class="btn btn-primary">AKS Store Demo →</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/overview" target="_blank" class="btn btn-outline">Azure Portal ↗</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/workloads" target="_blank" class="btn btn-outline">Workloads ↗</a>
-        </div>
+    <p class="cc-desc">3-node cluster (Standard_DS2_v2) running K8s 1.33 with Azure CNI. NGINX Ingress v1.12.0 + cert-manager v1.17.1. Hosts AKS Store Demo (9 pods) and EHR (4 pods).</p>
+    <div class="cc-meta">
+        <span class="cc-tag">Cluster: <b>aks-store-demo</b></span>
+        <span class="cc-tag">IP: <b>20.175.132.82</b></span>
+        <span class="cc-tag"><b>3</b> namespaces</span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://20.175.132.82" target="_blank" class="btn btn-primary">Store Demo →</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/overview" target="_blank" class="btn btn-outline">Azure ↗</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.ContainerService/managedClusters/aks-store-demo/workloads" target="_blank" class="btn btn-outline">Workloads ↗</a>
     </div>
 </div>
 
 <!-- PostgreSQL -->
-<div class="app-card pg">
-    <div class="card-header">
-        <div class="card-icon">🐘</div>
-        <div>
-            <div class="card-title">Azure PostgreSQL Flexible Server <span class="card-badge" style="background:rgba(244,114,182,.15);color:var(--pink);">DATABASE</span></div>
-            <div class="card-url">ehrdb-canadacentral.postgres.database.azure.com</div>
-        </div>
+<div class="compact-card c-pink">
+    <div class="cc-header">
+        <div class="cc-icon">🐘</div>
+        <div><div class="cc-title">PostgreSQL Flexible Server <span class="cc-badge" style="background:rgba(244,114,182,.15);color:var(--pink);">DATABASE</span></div></div>
     </div>
-    <div class="card-body">
-        <p class="card-desc">The <b>Azure Database for PostgreSQL — Flexible Server</b> instance powering all EHR data persistence. Runs PostgreSQL 16 on a Burstable B2s SKU with 32GB storage. Currently a single database (<code>ehrdb</code>) that will be decomposed into per-service databases as microservice extraction proceeds.</p>
-        <div class="card-details">
-            <div class="detail"><div class="dt">SKU</div><div class="dd">Standard_B2s (Burstable)</div></div>
-            <div class="detail"><div class="dt">Version</div><div class="dd">PostgreSQL 16</div></div>
-            <div class="detail"><div class="dt">Storage</div><div class="dd">32 GB</div></div>
-            <div class="detail"><div class="dt">Database</div><div class="dd">ehrdb</div></div>
-        </div>
-        <ul class="card-features">
-            <li>8 tables: Patients (15), Providers (8), Appointments (20), MedicalRecords (15), Prescriptions (18), LabResults (20), Allergies (12), Vitals (25)</li>
-            <li>133 total seed records with realistic healthcare data</li>
-            <li>SSL required — all connections encrypted with TLS 1.2+</li>
-            <li>Firewall rule: AllowAllAzure (0.0.0.0) for Azure service access</li>
-            <li>Burstable tier — cost-effective for development with burst capability</li>
-            <li>Automatic backups with 7-day retention</li>
-            <li>Target: decompose into 6 per-service databases (patient-db, clinical-db, scheduling-db, pharmacy-db, lab-db, provider-db)</li>
-        </ul>
-        <div class="card-actions">
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/overview" target="_blank" class="btn btn-primary">Azure Portal →</a>
-            <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/databases" target="_blank" class="btn btn-outline">Databases ↗</a>
-        </div>
+    <p class="cc-desc">PostgreSQL 16 on Burstable B2s with 32GB storage. Single <code>ehrdb</code> database with 8 tables (133 records). SSL required. Target: decompose into 6 per-service databases.</p>
+    <div class="cc-meta">
+        <span class="cc-tag">Host: <b>ehrdb-canadacentral</b></span>
+        <span class="cc-tag">SKU: <b>Standard_B2s</b></span>
+        <span class="cc-tag"><b>8</b> tables</span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/overview" target="_blank" class="btn btn-primary">Azure Portal →</a>
+        <a href="https://portal.azure.com/#@/resource/subscriptions/e62428e7-08dd-4bc2-82e2-2c51586d9105/resourceGroups/rg-aks-store-demo/providers/Microsoft.DBforPostgreSQL/flexibleServers/ehrdb-canadacentral/databases" target="_blank" class="btn btn-outline">Databases ↗</a>
     </div>
 </div>
 
-</div><!-- /app-grid -->
-
-<!-- ===== MIGRATION & STRATEGY GUIDES ===== -->
-<div class="arch-summary" style="margin-top:2rem;">
-    <h2>📋 Migration &amp; Strategy Guides</h2>
-    <div class="strategy-grid">
-        <a href="/rto-rpo.html" class="strategy-card rto">
-            <div class="sc-icon">⏱️</div>
-            <div class="sc-title">RTO / RPO Requirements</div>
-            <div class="sc-desc">Recovery Time &amp; Recovery Point objectives per service tier. 4-tier classification, Azure PostgreSQL HA configuration, PDB manifests, and Kafka event replay for Tier 3 recovery.</div>
-        </a>
-        <a href="/tcp-to-https.html" class="strategy-card tcp">
-            <div class="sc-icon">🔌</div>
-            <div class="sc-title">TCP to HTTPS Migration</div>
-            <div class="sc-desc">Moving from raw TCP sockets to HTTPS/REST with Istio mTLS. TLS termination at Ingress, AuthorizationPolicy, NetworkPolicy lockdown, contract-first API design with Polly resilience.</div>
-        </a>
-        <a href="/strangler-pattern.html" class="strategy-card strangler">
-            <div class="sc-icon">🌿</div>
-            <div class="sc-title">Strangler Fig Pattern</div>
-            <div class="sc-desc">Gradual monolith-to-microservices migration. Dual-write via Kafka, canary traffic shifting with Istio VirtualService, Anti-Corruption Layer with typed HTTP clients per bounded context.</div>
-        </a>
-        <a href="/domain-services.html" class="strategy-card domains">
-            <div class="sc-icon">🧩</div>
-            <div class="sc-title">Domain Decomposition</div>
-            <div class="sc-desc">6 bounded contexts mapped to microservices: Patient Management, Clinical Encounters, Scheduling, Pharmacy, Laboratory, and Provider Management with event-driven integration.</div>
-        </a>
-        <a href="/api-versions.html" class="strategy-card apiver">
-            <div class="sc-icon">🔀</div>
-            <div class="sc-title">API Version Catalog</div>
-            <div class="sc-desc">Three API versions (v1 basic CRUD, v2 paginated DTOs with dashboard, v3 FHIR R4 + AI decision support) with URL-based versioning and multi-version Swagger documentation.</div>
-        </a>
+<!-- GitHub -->
+<div class="compact-card c-gray">
+    <div class="cc-header">
+        <div class="cc-icon">🐙</div>
+        <div><div class="cc-title">GitHub Repository <span class="cc-badge" style="background:rgba(226,232,240,.1);color:var(--text);">SOURCE</span></div></div>
+    </div>
+    <p class="cc-desc">All source code, Dockerfiles, K8s manifests, and architecture docs. 4 app directories: <code>ehr-api/</code>, <code>ehr-frontend/</code>, <code>architecture-docs/</code>, <code>costing-app/</code>.</p>
+    <div class="cc-meta">
+        <span class="cc-tag">Branch: <b>master</b></span>
+        <span class="cc-tag"><b>Public</b> repo</span>
+        <span class="cc-tag"><b>15</b> spec modules</span>
+    </div>
+    <div class="cc-actions">
+        <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank" class="btn btn-primary">View Repo →</a>
+        <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp/commits/master" target="_blank" class="btn btn-outline">Commits ↗</a>
+        <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp/tree/master/specs" target="_blank" class="btn btn-outline">Specs ↗</a>
     </div>
 </div>
 
-<!-- ===== TECHNOLOGY STACK SUMMARY ===== -->
+</div><!-- /app-compact -->
+
+<hr class="sec-divider">
+
+<!-- ===== TECHNOLOGY STACK ===== -->
 <div class="arch-summary">
     <h2>🔧 Technology Stack</h2>
     <div class="tech-grid">
@@ -469,8 +420,8 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
         <div class="tech-item"><span class="ti">📦</span><div class="tech-info"><b>App Service</b><span class="tech-desc">B2 Linux · 4 Web Apps</span></div></div>
         <div class="tech-item"><span class="ti">📡</span><div class="tech-info"><b>Event Hubs</b><span class="tech-desc">Kafka API · 8 topics (target)</span></div></div>
         <div class="tech-item"><span class="ti">🛡️</span><div class="tech-info"><b>Istio</b><span class="tech-desc">Service Mesh · mTLS (target)</span></div></div>
-        <div class="tech-item"><span class="ti">🔑</span><div class="tech-info"><b>Entra ID</b><span class="tech-desc">OAuth 2.0 · 5 roles (target)</span></div></div>
-        <div class="tech-item"><span class="ti">📊</span><div class="tech-info"><b>OpenTelemetry</b><span class="tech-desc">Metrics · Traces · Logs (target)</span></div></div>
+        <div class="tech-item"><span class="ti">🔑</span><div class="tech-info"><b>Entra ID</b><span class="tech-desc">OAuth 2.0 · RBAC (target)</span></div></div>
+        <div class="tech-item"><span class="ti">📊</span><div class="tech-info"><b>OpenTelemetry</b><span class="tech-desc">Traces · Metrics (target)</span></div></div>
         <div class="tech-item"><span class="ti">🏗️</span><div class="tech-info"><b>Terraform</b><span class="tech-desc">IaC provisioning (target)</span></div></div>
     </div>
 </div>
@@ -478,16 +429,11 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 <!-- ===== DOMAIN EVENT CATALOG ===== -->
 <div class="arch-summary">
     <h2>📨 Domain Event Catalog</h2>
-    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Events published by microservices for inter-service communication via Kafka / Azure Event Hubs.</p>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Events for inter-service communication via Kafka / Azure Event Hubs.</p>
     <table class="event-table">
-        <tr>
-            <th>Event</th>
-            <th>Source</th>
-            <th>Consumers</th>
-            <th>Criticality</th>
-        </tr>
+        <tr><th>Event</th><th>Source</th><th>Consumers</th><th>Criticality</th></tr>
         <tr><td><code>PatientRegistered</code></td><td>patient-service</td><td>clinical, scheduling, audit</td><td><span class="crit-badge normal">Normal</span></td></tr>
-        <tr><td><code>AllergyRegistered</code></td><td>patient-service</td><td>pharmacy (interaction check), audit</td><td><span class="crit-badge high">High</span></td></tr>
+        <tr><td><code>AllergyRegistered</code></td><td>patient-service</td><td>pharmacy (drug interaction), audit</td><td><span class="crit-badge high">High</span></td></tr>
         <tr><td><code>CriticalVitalsAlert</code></td><td>patient-service</td><td>notification, clinical, audit</td><td><span class="crit-badge critical">Critical</span></td></tr>
         <tr><td><code>EncounterCompleted</code></td><td>clinical-service</td><td>pharmacy, lab, notification</td><td><span class="crit-badge high">High</span></td></tr>
         <tr><td><code>PrescriptionOrdered</code></td><td>pharmacy-service</td><td>notification, audit</td><td><span class="crit-badge high">High</span></td></tr>
@@ -500,7 +446,7 @@ a:hover{text-decoration:underline;filter:brightness(1.2);}
 </div><!-- /container -->
 
 <div class="footer">
-    <p>EHR Cloud Platform · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a> · Azure Canada Central · <a href="https://ehr-architecture-canadacentral.azurewebsites.net/architecture.html" target="_blank">Architecture Docs</a> · March 2026</p>
+    <p><a href="https://ehr-portal-canadacentral.azurewebsites.net" target="_blank">EHR Portal</a> · <a href="https://ehr-api-canadacentral.azurewebsites.net/swagger" target="_blank">API Swagger</a> · <a href="/architecture.html">Architecture</a> · <a href="https://ehr-costing-canadacentral.azurewebsites.net" target="_blank">Costing</a> · <a href="https://github.com/KrishnaDistributedcomputing/K8SbasedApp" target="_blank">GitHub</a> · Canada Central · March 2026</p>
 </div>
 
 </body>
